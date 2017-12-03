@@ -25,7 +25,7 @@ from smarthouse.models import Agent, House, HouseGallery
 
 
 class CreateAccountView(TemplateView):
-    template_name = 'signup.html'
+    template_name = 'site/signup.html'
 
     def post(self, request, *args, **kwargs):
         try:
@@ -138,7 +138,7 @@ class ResetPasswordRequestView(TemplateView):
                 c = {
                     'email': user.email,
                     'domain': request.META['HTTP_HOST'],
-                    'site_name': 'H-BOARD',
+                    'site_name': 'SmartKeja',
                     'uid': urlsafe_base64_encode(force_bytes(user.pk)),
                     'user': user,
                     'token': default_token_generator.make_token(user),
