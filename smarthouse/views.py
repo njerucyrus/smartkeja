@@ -1,31 +1,42 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import json
+
 from django.conf.global_settings import DEFAULT_FROM_EMAIL
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404
 
 # Create your views here.
 from django.template import loader
+from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, RedirectView, ListView, DetailView
+from django.views.generic.edit import DeleteView, UpdateView
 
-from smarthouse.models import Agent, House, HouseGallery
+from smarthouse.models import Agent, House, HouseGallery, Booking
 
 
 class CreateAccountView(TemplateView):
     template_name = 'site/signup.html'
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return HttpResponseRedirect('/')
+        return render(request, self.template_name, {})
 
     def post(self, request, *args, **kwargs):
         try:
@@ -76,11 +87,11 @@ class CreateAccountView(TemplateView):
 
         except IntegrityError:
             messages.info(request, "User account already exists please choose a different username")
-            return HttpResponseRedirect("")
+            return HttpResponseRedirect("/singup")
 
 
 class LoginView(View):
-    template_name = 'website/pages/login.html'
+    template_name = 'site/login.html'
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated():
@@ -111,7 +122,7 @@ class LoginView(View):
 
 
 class LogoutView(RedirectView):
-    url = '/login'
+    url = '/app/login'
 
     def get(self, request, *args, **kwargs):
         logout(request)
@@ -152,7 +163,7 @@ class ResetPasswordRequestView(TemplateView):
                 send_mail(subject, email_message, DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
                 messages.success(request, "Password reset link sent to %s check your inbox "
                                           "if not there check in the spam folder" % user.email)
-                return HttpResponseRedirect('/login/')
+                return HttpResponseRedirect('/app/login/')
             else:
                 messages.info(request, 'No matching account with the email provided please try again later')
                 return HttpResponseRedirect('/forgot-password/')
@@ -181,7 +192,7 @@ class PasswordResetConfirmView(TemplateView):
             user.set_password(new_password)
             user.save()
             messages.success(request, 'Password reset was successful use the new password to login')
-            return HttpResponseRedirect('/login/')
+            return HttpResponseRedirect('/app/login/')
         else:
             messages.info(request, 'Encountered an error while resetting your password please try again later')
             return HttpResponseRedirect('/reset-password-confirm/{}-{}/'.format(uidb64, token))
@@ -197,10 +208,10 @@ class HousePostListView(ListView):
 
 class HouseDetailView(DetailView):
     model = House
-    template_name = 'house_detail.html'
+    template_name = ''
 
-    def get_context_data(self,  **kwargs):
-        context = super(HouseDetailView,self).get_context_data(**kwargs)
+    def get_context_data(self, **kwargs):
+        context = super(HouseDetailView, self).get_context_data(**kwargs)
 
         try:
             gallery = HouseGallery.objects.get(house=get_object_or_404(House, pk=self.kwargs['pk']))
@@ -212,38 +223,148 @@ class HouseDetailView(DetailView):
         return context
 
 
+class DeleteHouseView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
+    login_url = '/app/login'
+    template_name = 'dashboard/pages/delete_house.html'
+    context_object_name = 'house'
+    success_url = '/app/dashboard/myposts/'
+    model = House
+    success_message = 'House Was deleted'
+
+
+class UpdateHouseView(LoginRequiredMixin, SuccessMessageMixin,  TemplateView):
+    template_name = 'dashboard/pages/update_house.html'
+    login_url = '/app/login'
+    success_message = 'House Info updated'
+
+    def get_context_data(self, **kwargs):
+        context = super(UpdateHouseView, self).get_context_data(**kwargs)
+        house = get_object_or_404(House, pk=self.kwargs['pk'])
+        context['house'] = house
+        return context
+
+    def post(self, request, *args, **kwargs):
+        house = get_object_or_404(House, pk=self.kwargs['pk'])
+        posting_for = request.POST.get('posting_for')
+        if posting_for == 'sale':
+            house.sale_price = request.POST.get('id_sale_price')
+            house.rent_price = 0
+            house.on_sale = True
+
+        if posting_for == 'rent':
+            house.sale_price = 0
+            house.rent_price = request.POST.get('id_rent_price')
+            house.on_sale = False
+
+        house.bedrooms = request.POST.get('bedrooms')
+
+        house.save()
+        messages.success(request, "House info updated successfully")
+        return HttpResponseRedirect('/app/dashboard/myposts')
+
+
 class PostHouseView(LoginRequiredMixin, TemplateView):
-    login_url = '/login'
+    login_url = '/app/login'
+    template_name = 'dashboard/pages/post_house.html'
 
     def post(self, request, *args, **kwargs):
         if request.user.is_active:
-            posting_for = request.POST.get('posting_for')
+            if request.FILES.__contains__('primary_img'):
+                posting_for = request.POST.get('posting_for')
 
-            house = House.objects.create(
-                managed_by=request.user,
-                lat=request.POST.get('lat'),
-                lng=request.POST.get('lng'),
-                location=request.POST.get('location'),
-                bedrooms=request.POST.get('bedrooms')
-            )
+                house = House.objects.create(
+                    managed_by=request.user,
+                    lat=request.POST.get('lat'),
+                    lng=request.POST.get('lng'),
+                    location=request.POST.get('location'),
+                    bedrooms=request.POST.get('bedrooms'),
+                    primary_img=request.FILES['primary_img'],
+                    sale_price=0,
+                    rent_price=0
+                )
 
-            if posting_for == 'sale':
-                house.sale_price = request.POST.get('sale_price')
-                house.rent_price = 0
-                house.on_sale = True
+                if posting_for == 'sale':
+                    house.sale_price = request.POST.get('id_sale_price')
+                    house.rent_price = 0
+                    house.on_sale = True
 
-            if posting_for == 'rent':
-                house.sale_price = 0
-                house.rent_price = request.POST.get('rent_price')
-                house.on_sale = False
+                if posting_for == 'rent':
+                    house.sale_price = 0
+                    house.rent_price = request.POST.get('id_rent_price')
+                    house.on_sale = False
 
-            house.save()
-            messages.success(request, "House Posted Successfully")
-            return HttpResponseRedirect('/houses')
+                house.save()
+                messages.success(request, "House Posted Successfully")
+                return HttpResponseRedirect('/app/dashboard/myposts/')
+            else:
+                messages.info(request, "An image is required")
+                return HttpResponseRedirect("")
+
         else:
             messages.info(request, "You are not authorized to post a house please contact "
                                    "admin to get your account activated")
             return HttpResponseRedirect("")
 
 
+class UpdateGalleryView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    model = HouseGallery
+    context_object_name = 'gallery'
+    fields = ['image1', 'image2', 'image3', 'image4', 'image5']
+    success_message = 'Gallery Updated'
+    success_url = '/app/dashboard/myposts'
+    template_name = 'dashboard/pages/add_images.html'
+    login_url = '/app/login/'
+
+    def get_object(self, queryset=None):
+        obj, created = HouseGallery.objects.get_or_create(
+            house=House.objects.get(pk=self.kwargs['pk']),
+
+        )
+        return obj
+
+
+class DashboardIndex(LoginRequiredMixin, TemplateView):
+    login_url = '/app/login'
+    template_name = 'dashboard/index.html'
+
+
+# class WebsiteIndexView(TemplateView):
+#     template_name = 'site/home.html'
+
+
+class MyHousePostsView(LoginRequiredMixin, ListView):
+    login_url = '/app/login'
+    template_name = 'dashboard/pages/myhouses.html'
+    paginate_by = 10
+    context_object_name = 'house_posts'
+
+    def get_queryset(self):
+        object_list = House.objects.filter(managed_by=self.request.user)
+        return object_list
+
+
+class PublishPost(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(PublishPost, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request,*args, **kwargs):
+        house = get_object_or_404(House, pk=self.kwargs['pk'])
+        data = json.loads(request.body)
+        publish_value = data['publish_value']
+        message = ''
+        if publish_value == "on":
+            message = 'House Published its now visible to clients'
+            house.is_published = True
+        if publish_value == 'off':
+            message = "House Unpublished now its invisible to clients"
+            house.is_published = False
+        house.save()
+        return JsonResponse({'message': message, 'status': 'success', 'status_code':200})
+
+
+class MyHouseBookingView(LoginRequiredMixin, ListView):
+    paginate_by = 10
+    template_name = 'dashboard/pages/myhousebookings.html'
+    model = Booking
 

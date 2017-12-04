@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.contrib.auth.models import User
+
+
 # Create your models here.
 
 
@@ -26,18 +28,20 @@ class House(models.Model):
     description = models.TextField()
     on_sale = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
+    primary_img = models.ImageField(upload_to='uploads/')
+    is_published = models.BooleanField(default=False)
 
     def __str__(self):
-        return "house at {}".format(self.location)
+        return "A {}-bedroom(s) House at {}".format(self.bedrooms, self.location)
 
 
 class HouseGallery(models.Model):
     house = models.ForeignKey(House)
-    image1 = models.ImageField(upload_to='uploads')
-    image2 = models.ImageField(upload_to='uploads')
-    image3 = models.ImageField(upload_to='uploads')
-    image4 = models.ImageField(upload_to='uploads')
-    image5 = models.ImageField(upload_to='uploads')
+    image1 = models.ImageField(upload_to='uploads/', null=True, blank=True)
+    image2 = models.ImageField(upload_to='uploads/', null=True, blank=True)
+    image3 = models.ImageField(upload_to='uploads/', null=True, blank=True)
+    image4 = models.ImageField(upload_to='uploads/', null=True, blank=True)
+    image5 = models.ImageField(upload_to='uploads/', null=True, blank=True)
 
     def __str__(self):
         return "Gallery for {}".format(str(self.house))
@@ -48,7 +52,7 @@ class Booking(models.Model):
     booked_by = models.ForeignKey(User)
     date_booked = models.DateTimeField(auto_now_add=True)
     cleared = models.BooleanField(default=False)
-    amount_paid = models.FloatField()
+    deposit_amount = models.FloatField()
 
     def __str__(self):
         return "Booking for {}".format(str(self.house))
@@ -69,7 +73,3 @@ class Payment(models.Model):
 
     def __str__(self):
         return "{} for {}".format(self.payment_type, str(self.house))
-
-
-
-

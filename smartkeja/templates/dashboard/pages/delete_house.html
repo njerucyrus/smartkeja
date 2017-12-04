@@ -1,0 +1,26 @@
+{% extends 'dashboard/index.html' %}
+
+{% block widgets %}
+
+{% endblock %}
+
+{% block content %}
+        <div class="card">
+            <div class="header">
+                <h3>Delete House</h3>
+            </div>
+        <div class="body">
+            <form method="post">
+               <p>Are you sure you want to delete "{{ house }}"?</p>
+               {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                <input type="submit" class="btn btn-danger waves-effect" value="CONFIRM DELETE">
+            <a href="{% url 'smarthouse:myposts' %}" class="btn btn-info waves-effect pull-right">NO TAKE ME BACK</a>
+                    </div>
+                    </div>
+            </form>
+
+        </div>
+        </div>
+{% endblock %}
