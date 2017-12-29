@@ -1,51 +1,24 @@
-{% extends 'dashboard/index.html' %}
+{% extends 'site/base.html' %}
 {% load staticfiles %}
-{% block widgets %}
-
-{% endblock %}
-
-
 {% block content %}
-    <style>
-
-        .custom-input {
-            height: 45px;
-            margin: 5px;
-            text-align: center !important;
-
-        }
-
-        .custom-btn {
-            height: 45px;
-            margin: 5px;
-        }
-
-    </style>
     <div class="row clearfix">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
 
-    <form method="get" action="{% url 'smarthouse:search_admin' %}">
-        <div class="col-md-8">
+            <div class="body">
 
-                <div class="form-group">
-                    <input type="text" class="form-control custom-input" name="q" placeholder="search by location">
-                </div>
-
-        </div>
-        <div class="col-md-4">
-            <button type="submit" class="btn btn-primary custom-btn">SEARCH</button>
-        </div>
-    </form>
-        {% if results_found %}
-            <div class="row clearfix">
-                <div class="col-md-12">
-                    <div style="margin-top: 5px;">
-                        <p>Showing results for {{ query }}</p>
-                    </div>
+                <div class="input-group">
+                    {% include 'site/search_template.html' %}
                 </div>
             </div>
-        {% endif %}
+            {% if search_text and boards %}
+                <div class="body" style="color: green; margin-bottom: 10px; font-weight: bold">
+                    Showing results for "{{ search_text }}"
+                </div>
+            {% endif %}
+        </div>
     </div>
-    {% if messages %}
+
+     {% if messages %}
         <ul class="list-group" style="list-style: none">
             {% for message in messages %}
                 <li class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
@@ -56,13 +29,17 @@
             {% endfor %}
         </ul>
     {% endif %}
+
     {% if house_posts %}
+
         {% for house in house_posts %}
             <div class="row clearfix">
-                <div class="card">
+
+                <div class="card" style="" onmouseover="this.style.background='#f0f0f0'"
+                     onmouseout="this.style.background='white';">
                     <div class="header">
                         <h2>
-                            <a href="{{ board.get_absolute_url }}" style="color: #2196F3">
+                            <a href="{{ house.get_absolute_url }}" style="color: #2196F3">
                                 House Located At <i class="material-icons">room</i> {{ house.location }}
                             </a>
                             <small></small>
@@ -74,18 +51,21 @@
                                     <i class="material-icons">more_vert</i>
                                 </a>
                                 <ul class="dropdown-menu pull-right">
-                                    <li><a href="{% url 'smarthouse:update_house' pk=house.pk %}"><i
-                                            class="material-icons"
-                                            style="color: #3F51B5">create</i>Edit
-                                        Info</a></li>
-                                    <li><a href="{% url 'smarthouse:update_gallery' pk=house.pk %}"><i
-                                            class="material-icons"
-                                            style="color: #CDDC39;">add_a_photo</i>
-                                        Add Images</a></li>
-                                    <li><a href="{% url 'smarthouse:delete_house' pk=house.pk %}"><i
-                                            class="material-icons"
-                                            style="color: #F44336">delete</i>Remove
-                                    </a></li>
+                                    <li>
+                                        {% if house.on_sale %}
+                                            <li>
+                                                <a href="{% url 'smarthouse:checkout' pk=house.pk %}">Buy Now</a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <a href="{% url 'smarthouse:checkout' pk=house.pk %}">Book Now</a>
+                                            </li>
+                                        {% endif %}
+                                    <li>
+                                        <a href="{{ house.get_absolute_url }}">More Info about this house..</a>
+                                    </li>
+
+                                    </li>
                                 </ul>
                             </li>
                         </ul>
@@ -119,29 +99,24 @@
                                             }
                                         </style>
                                         <ul style="list-style: none">
-                                            {% if house.is_published %}
-
+                                            {% if house.on_sale %}
                                                 <li>
-                                                    <button class="btn btn-primary waves-effect"
-                                                            onclick="showConfirmMessage('{{ house.pk }}', 'off')">Un
-                                                        publish
-                                                    </button>
+                                                    <a href="{% url 'smarthouse:checkout' pk=house.pk %}" class="btn btn-primary">BUY NOW</a>
                                                 </li>
-
                                             {% else %}
                                                 <li>
-                                                    <button class="btn btn-primary waves-effect"
-                                                            onclick="showConfirmMessage('{{ house.pk }}', 'on')">PUBLISH
-                                                    </button>
+                                                    <a href="{% url 'smarthouse:checkout' pk=house.pk %}" class="btn btn-primary">BOOK NOW</a>
                                                 </li>
-
                                             {% endif %}
-
                                             <li>
-                                                <a href="{% url 'smarthouse:delete_house' pk=house.pk %} "
-                                                   class="btn btn-danger">DELETE</a>
-                                            </li>
+                                                <button type="button" class="btn btn-default waves-effect m-r-20"
+                                                        data-toggle="modal" data-target="#largeModal">VIEW ON MAP
+                                                </button>
 
+                                            </li>
+                                            <li>
+                                                <a href="{{ house.get_absolute_url }}">More Info about this house..</a>
+                                            </li>
 
                                         </ul>
                                     </div>
@@ -163,6 +138,7 @@
 
                 </div>
             </div>
+
         {% endfor %}
 
         <div class="container-fluid pull-right">
@@ -212,73 +188,54 @@
         </div>
 
     {% else %}
-        {% if not results_found and  in_search %}
-
-            <div class="alert alert-info">
-                <p>No matching results found For <b>{{ query }} Try again or <a href="{% url 'smarthouse:myposts' %}" class="aleart-link">Go back</a> </b></p>
-            </div>
-        {% endif %}
-        {% if not in_search %}
-            <div class="alert alert-info">
-                <p>You do not have any houses posted for sale or rent. <a href="{% url 'smarthouse:post_house' %}">Click
-                    here to post</a></p>
-            </div>
-        {% endif %}
+        <div class="alert alert-info">
+            <p>No House Posts</p>
+        </div>
     {% endif %}
 
 
-    <!-- Jquery Core Js -->
-    <script src="{% static 'js/hosts.js' %}"></script>
-    <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
-    <!-- SweetAlert Plugin Js -->
-    <script src="{% static 'plugins/sweetalert/sweetalert.min.js' %}"></script>
+    <div class="modal fade" id="largeModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="largeModalLabel">Modal title</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="map" style="height: 300px; width: auto;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link waves-effect">SAVE CHANGES</button>
+                    <button type="button" class="btn btn-link waves-effect" data-dismiss="modal">CLOSE</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
 
     <script>
-        var baseUrl = getBaseHostUrl();
 
-        function showConfirmMessage(pk, option) {
-            var text;
-            if (option === 'on') {
-                text = "You want to publish this post.";
-            } else {
-                text = "You Want to UnPublish this post!";
-            }
+        {% for house in house_posts %}
 
-            swal({
-                title: "Are you sure?",
-                text: text,
-                type: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#4CAF50",
-                confirmButtonText: "Yes, Submit!",
-                closeOnConfirm: false
-            }, function () {
-                var url = baseUrl + '/api/' + pk + '/publish/';
+            function initMap() {
 
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    dataType: 'json',
-                    contentType: 'application/json',
-                    data: JSON.stringify({publish_value: option}),
-                    traditional: true,
-                    success: function (response) {
-                        console.log(response);
-                        if (response['status_code'] === 200) {
+                var map = new google.maps.Map(document.getElementById("map"), {
+                    center: {lat: {{ house.lat }}, lng: {{house.lng}}},
+                    zoom: 8
+                });
+                console.log("LAT IS ", lat);
+                console.log("Lng IS ", lng);
 
-                            swal("Completed!", response['message'], "success");
-                            setTimeout(function () {
-                                window.location.href = '/dashboard/myposts/'
-                            }, 1500)
-                        } else {
-                            console.log("error ")
-                        }
-                    }
+                $('#largeModal').on('shown.bs.modal', function () {
+                    google.maps.event.trigger(map, "resize");
                 });
 
-            });
-        }
+
+            }
+        {% endfor %}
 
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC85mWXDYoa_O8r2NYK3ffyNZR2y2xYPxM&libraries=places&callback=initMap"
+            async defer></script>
+
 {% endblock %}

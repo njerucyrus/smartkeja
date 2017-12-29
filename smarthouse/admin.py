@@ -76,3 +76,29 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Payment, PaymentAdmin)
+
+
+class AgentAdmin(admin.ModelAdmin):
+    list_display = [
+        'user',
+        'agency_name',
+        'phone_number'
+    ]
+
+    class Meta:
+        model = Agent
+
+
+admin.site.register(Agent, AgentAdmin)
+
+
+class ContactUsAdmin(admin.ModelAdmin):
+    list_display = [
+        'name',
+        "email",
+        "message"
+    ]
+    model = ContactUs
+
+
+admin.site.register(ContactUs, ContactUsAdmin)

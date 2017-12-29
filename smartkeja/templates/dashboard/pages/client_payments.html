@@ -8,7 +8,7 @@
   <div class="container-fluid">
         <div class="block-header">
             <h2>
-             Client House Booking
+             Client House Payments
 
             </h2>
             {% if messages %}
@@ -39,21 +39,25 @@
                                 <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>House Booked</th>
-                                    <th>Book By </th>
-                                    <th>Deposit Paid</th>
-                                    <th>Date Booked</th>
+                                    <th>House Paid For</th>
+                                    <th>Client Phone Number </th>
+                                    <th>Amount Paid</th>
+                                    <th>Payment Category</th>
+                                    <th>Transaction Status</th>
+                                    <th>Date Paid</th>
 
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {% for booking in bookings %}
+                                {% for payment in payments %}
                                     <tr>
                                         <td>{{ forloop.counter }}</td>
-                                        <td>{{ booking.house }}</td>
-                                        <td>{{ booking.booked_by.get_full_name }}</td>
-                                        <td>{{ booking.deposit_amount }}</td>
-                                        <td>{{ booking.date_booked }}</td>
+                                        <td>{{ payment.house }}</td>
+                                        <td>{{ payment.phone_number }}</td>
+                                        <td>{{ payment.amount }}</td>
+                                        <td>{{ payment.payment_type }}</td>
+                                        <td>{{ payment.status }}</td>
+                                        <td>{{ payment.date_paid }}</td>
                                     </tr>
 
                                 {% endfor %}
@@ -65,5 +69,5 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div>k
 {% endblock %}

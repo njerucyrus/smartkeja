@@ -1,0 +1,56 @@
+{% extends 'site/base.html' %}
+{% load staticfiles %}
+
+{% block content %}
+    <div class="row clearfix">
+        <div class="header">
+            <h4>Checkout Here</h4>
+        </div>
+
+        <div class="body">
+            <div class="col-md-12">
+                <img src="{% static 'images/mpesalogo1.png' %}" class="img img-responsive">
+                <h6>How To Pay</h6>
+                <span>The Process is easy as ABCD just follow the following steps</span>
+                <hr/>
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        Step 1
+                        <br/>
+                        Enter you phone number in the form below
+
+                    </li>
+
+                    <li class="list-group-item">
+                        Step 2
+                        <br/>
+                        Click on checkout and check you phone number for a confirmation.
+                    </li>
+                    <li class="list-group-item">
+                        Step 3
+                        <br>
+                        Check your phone number and enter the M-pesa pin on the prompt to complete the transaction.
+                        Done!!!
+                    </li>
+                </ul>
+                <form action="#" method="post">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label id="amount" for="amount">Amount</label>
+                            <input type="number" class="form-control" id="amount" name="amount"
+                                   value="{% if house.on_sale %} {{ house.sale_price }}{% else %}{{ house.rent_price }}{% endif %}"
+                                   disabled>
+                            <input type="hidden" name="house_id" value="{{ house.id }}">
+                            <label for="phoneNumber">Your Phone Number</label>
+                            <input type="number" class="form-control" name="phoneNumber" id="phoneNumber" placeholder="07XX-XXXX-XXX" required>
+                            <br/>
+                            <input type="submit" class="btn btn-primary waves-effect" value="CHECKOUT" style="margin-bottom: 15px!important;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

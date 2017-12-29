@@ -1,0 +1,133 @@
+{% extends 'site/index.html' %}
+
+{% block content %}
+    <style>
+    input, input>textarea{
+        padding: 15px!important;
+    }
+    </style>
+    <div class="container-fluid">
+        <div class="row clearfix">
+
+            <div class="card" style="background: #f0f0f0!important;">
+                <div class="body">
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="header">
+                                <h4>Our Address</h4>
+                            </div>
+                            <div class="content">
+                                Email: sales@smartkeja.co.ke
+                                <br>
+                                Phone: +254 7 000 222 22
+                                <br>
+                                <br>
+                                Main Office Location: Nyeri Town X building 6th Floor.
+                                <br>
+                                <br>
+                                Office hours : Monday - Friday 8.00AM - 5.00PM
+                                <br>
+                                Find us on social media
+                                <br>
+                                <br>
+                                <ul class="list-group">
+                                    <li class="list-group-item">
+                                        <a href="#"><span class="fa fa-4x  fa-facebook-square"></span></a>
+                                        <a href="#"><span class="fa fa-4x  fa-twitter-square"></span></a>
+                                        <a href="#"><span class="fa fa-4x  fa-google-plus-square"></span></a>
+                                        <a href="#"><span class="fa fa-4x  fa-linkedin-square"></span></a>
+                                        <a href="#"><span class="fa fa-4x  fa-instagram"></span></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="header">Map View</div>
+                            <div id="map" style="height: 335px; width:auto; background: white">
+
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div>
+                                <h4 class="header">Write to us</h4>
+                            </div>
+
+                            <div class="form-group">
+                                <form method="post" action="#">
+
+                                    <div class="col-md-6">
+
+                                        <div class="form-group">
+                                            <div class="form-line">
+                                                <label for="name">Your FullName *</label>
+                                                <input type="text" id="name" name="name" class="form-control" placeholder="Your FullName" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <div class="form-line">
+                                                <label for="email">Your Email *</label>
+                                                <input type="text" name="email" id="email" class="form-control" placeholder="Your Email" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-9">
+
+                                        <div class="form-group form-float">
+                                    <div class="form-line">
+                                        <textarea name="message" cols="30" rows="5" class="form-control no-resize" required></textarea>
+                                        <label class="form-label">Your Message</label>
+                                    </div>
+                                </div>
+                                        {% csrf_token %}
+                                        <input type="submit" class="btn btn-primary" value="SUBMIT">
+                                    </div>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function initMap() {
+
+            var nyeri = {lat: -0.446896, lng: 36.949763};
+
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 13,
+                center: nyeri
+
+            });
+            var contentString = '<div class="header"><h6>SmartKeja Office Building</h3></br> <p> Email: sales@smartkeja.co.ke\n' +
+                '                        <br>\n' +
+                '                        Phone: +254 7 000 222 22\n' +
+                '                        <br>\n' +
+                '                        Main Office Location: Nyeri Town X building 6th Floor.\n' +
+                '                        <br>\n' +
+                '                        Office hours : Monday - Friday 8.00AM - 5.00PM\n' +
+                '                        <br></p></div>';
+            var infoWindow = new google.maps.InfoWindow({
+                content: contentString
+            });
+            var marker = new google.maps.Marker({
+                position: nyeri,
+                map: map,
+                title: "SmartKeja"
+            });
+
+            marker.addListener('click', function () {
+                infoWindow.open(map, marker);
+            });
+        }
+    </script>
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC85mWXDYoa_O8r2NYK3ffyNZR2y2xYPxM&callback=initMap">
+    </script>
+{% endblock %}

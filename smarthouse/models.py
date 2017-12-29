@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.contrib.auth.models import User
-
+from django.urls import reverse
 
 # Create your models here.
 
@@ -30,6 +30,10 @@ class House(models.Model):
     is_available = models.BooleanField(default=True)
     primary_img = models.ImageField(upload_to='uploads/')
     is_published = models.BooleanField(default=False)
+    date_posted = models.DateTimeField(auto_now_add=True)
+
+    def get_absolute_url(self):
+        return reverse('smarthouse:house_detail', args=[self.pk])
 
     def __str__(self):
         return "A {}-bedroom(s) House at {}".format(self.bedrooms, self.location)
@@ -73,3 +77,12 @@ class Payment(models.Model):
 
     def __str__(self):
         return "{} for {}".format(self.payment_type, str(self.house))
+
+
+class ContactUs(models.Model):
+    name = models.CharField(max_length=200)
+    email = models.EmailField()
+    message = models.TextField(max_length=200)
+
+    def __str__(self):
+        return "Contact message from {}".format(self.email)

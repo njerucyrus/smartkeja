@@ -1,0 +1,21 @@
+<div class="row clearfix">
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <div class="container-fluid">
+            <form method="post" action="{% url 'smarthouse:web_search' %}">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="location" placeholder="Search By Location">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="low_limit" placeholder="Type the lowest cost">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="high_limit" placeholder="Type the highest cost">
+                </div>
+                <div class="col-md-2">
+                    {% csrf_token %}
+                    <button class="btn btn-primary" type="submit">SEARCH</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

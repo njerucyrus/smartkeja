@@ -91,54 +91,41 @@
                 <ul class="list">
                     <li class="header">MAIN NAVIGATION</li>
                     <li class="active">
-                        <a href="index.html">
+                        <a href="{% url 'smarthouse:dashboard_index' %}">
                             <i class="material-icons">home</i>
                             <span>Home</span>
                         </a>
                     </li>
                     <li>
-                        <a href="pages/typography.html">
-                            <i class="material-icons">text_fields</i>
-                            <span>Typography</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="pages/helper-classes.html">
-                            <i class="material-icons">layers</i>
-                            <span>Helper Classes</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:void(0);" class="menu-toggle">
+                        <a href="{% url 'smarthouse:myposts' %}">
                             <i class="material-icons">widgets</i>
-                            <span>Widgets</span>
+                            <span>My Houses</span>
                         </a>
-                        <ul class="ml-menu">
-                            <li>
-                                <a href="javascript:void(0);" class="menu-toggle">
-                                    <span>Cards</span>
-                                </a>
-                                <ul class="ml-menu">
-                                    <li>
-                                        <a href="pages/widgets/cards/basic.html">Basic</a>
-                                    </li>
-                                    <li>
-                                        <a href="pages/widgets/cards/colored.html">Colored</a>
-                                    </li>
-                                    <li>
-                                        <a href="pages/widgets/cards/no-header.html">No Header</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="menu-toggle">
-                                    <span>Infobox</span>
-                                </a>
-                                <ul class="ml-menu">
+                    </li>
+                    <li>
+                        <a href="{% url 'smarthouse:post_house' %}">
+                            <i class="material-icons">layers</i>
+                            <span>Add House</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="material-icons">account_balance</i>
+                            <span>Accounts</span>
+                        </a>
+                    </li>
 
-                                </ul>
-                            </li>
-                        </ul>
+                    <li>
+                        <a href="{% url 'smarthouse:my_house_booking' %}">
+                            <i class="material-icons">chrome_reader_mode</i>
+                            <span>Bookings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="material-icons">place</i>
+                            <span>View On Map</span>
+                        </a>
                     </li>
 
                 </ul>
@@ -160,9 +147,6 @@
 
     <section class="content">
         <div class="container-fluid">
-            <div class="block-header">
-                <h2>DASHBOARD</h2>
-            </div>
 
         {% block widgets %}
             <!-- Widgets -->

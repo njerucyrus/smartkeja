@@ -5,18 +5,18 @@ import json
 
 from django.conf.global_settings import DEFAULT_FROM_EMAIL
 from django.contrib import messages
+from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import IntegrityError
-from django.http import HttpResponseRedirect, JsonResponse
+from django.db.models import Q
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404
-
 # Create your views here.
 from django.template import loader
 from django.utils.decorators import method_decorator
@@ -26,8 +26,8 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, RedirectView, ListView, DetailView
 from django.views.generic.edit import DeleteView, UpdateView
-
-from smarthouse.models import Agent, House, HouseGallery, Booking
+from django.urls import reverse
+from smarthouse.models import Agent, House, HouseGallery, Booking, Payment, ContactUs
 
 
 class CreateAccountView(TemplateView):
@@ -55,7 +55,7 @@ class CreateAccountView(TemplateView):
                 user.save()
                 login(request, user)
                 messages.success(request, "Account created successfully")
-                return HttpResponseRedirect('/dashboard')
+                return HttpResponseRedirect(reverse("smarthouse:dashboard_index"))
 
             if account_type == 'agent':
                 user = User.objects.create(
@@ -72,7 +72,7 @@ class CreateAccountView(TemplateView):
                     phone_number=request.POST.get('phone_number')
                 )
                 agent.save()
-                return HttpResponseRedirect('/dashboard')
+                return HttpResponseRedirect(reverse("smarthouse:dashboard_index"))
 
             if account_type == 'client':
                 user = User.objects.create(
@@ -83,7 +83,7 @@ class CreateAccountView(TemplateView):
                 )
                 user.set_password(request.POST.get('password'))
                 user.save()
-                return HttpResponseRedirect('/')
+                return HttpResponseRedirect(reverse("smarthouse:web_index"))
 
         except IntegrityError:
             messages.info(request, "User account already exists please choose a different username")
@@ -122,7 +122,7 @@ class LoginView(View):
 
 
 class LogoutView(RedirectView):
-    url = '/app/login'
+    url = '/login'
 
     def get(self, request, *args, **kwargs):
         logout(request)
@@ -163,10 +163,10 @@ class ResetPasswordRequestView(TemplateView):
                 send_mail(subject, email_message, DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
                 messages.success(request, "Password reset link sent to %s check your inbox "
                                           "if not there check in the spam folder" % user.email)
-                return HttpResponseRedirect('/app/login/')
+                return HttpResponseRedirect(reverse("smarthouse:login"))
             else:
                 messages.info(request, 'No matching account with the email provided please try again later')
-                return HttpResponseRedirect('/forgot-password/')
+                return HttpResponseRedirect("smarthouse:forgot_password")
         else:
             messages.info(request, "Please enter a valid email")
             return HttpResponseRedirect('/forgot-password/')
@@ -192,7 +192,7 @@ class PasswordResetConfirmView(TemplateView):
             user.set_password(new_password)
             user.save()
             messages.success(request, 'Password reset was successful use the new password to login')
-            return HttpResponseRedirect('/app/login/')
+            return HttpResponseRedirect('/login/')
         else:
             messages.info(request, 'Encountered an error while resetting your password please try again later')
             return HttpResponseRedirect('/reset-password-confirm/{}-{}/'.format(uidb64, token))
@@ -208,7 +208,8 @@ class HousePostListView(ListView):
 
 class HouseDetailView(DetailView):
     model = House
-    template_name = ''
+    template_name = 'site/house_details.html'
+    context_object_name = 'house'
 
     def get_context_data(self, **kwargs):
         context = super(HouseDetailView, self).get_context_data(**kwargs)
@@ -224,17 +225,17 @@ class HouseDetailView(DetailView):
 
 
 class DeleteHouseView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
-    login_url = '/app/login'
+    login_url = '/login'
     template_name = 'dashboard/pages/delete_house.html'
     context_object_name = 'house'
-    success_url = '/app/dashboard/myposts/'
+    success_url = '/dashboard/myposts/'
     model = House
     success_message = 'House Was deleted'
 
 
-class UpdateHouseView(LoginRequiredMixin, SuccessMessageMixin,  TemplateView):
+class UpdateHouseView(LoginRequiredMixin, SuccessMessageMixin, TemplateView):
     template_name = 'dashboard/pages/update_house.html'
-    login_url = '/app/login'
+    login_url = '/login'
     success_message = 'House Info updated'
 
     def get_context_data(self, **kwargs):
@@ -260,11 +261,11 @@ class UpdateHouseView(LoginRequiredMixin, SuccessMessageMixin,  TemplateView):
 
         house.save()
         messages.success(request, "House info updated successfully")
-        return HttpResponseRedirect('/app/dashboard/myposts')
+        return HttpResponseRedirect(reverse("smarthouse:myposts"))
 
 
 class PostHouseView(LoginRequiredMixin, TemplateView):
-    login_url = '/app/login'
+    login_url = '/login'
     template_name = 'dashboard/pages/post_house.html'
 
     def post(self, request, *args, **kwargs):
@@ -295,7 +296,7 @@ class PostHouseView(LoginRequiredMixin, TemplateView):
 
                 house.save()
                 messages.success(request, "House Posted Successfully")
-                return HttpResponseRedirect('/app/dashboard/myposts/')
+                return HttpResponseRedirect(reverse('smarthouse:myposts'))
             else:
                 messages.info(request, "An image is required")
                 return HttpResponseRedirect("")
@@ -311,9 +312,9 @@ class UpdateGalleryView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     context_object_name = 'gallery'
     fields = ['image1', 'image2', 'image3', 'image4', 'image5']
     success_message = 'Gallery Updated'
-    success_url = '/app/dashboard/myposts'
+    success_url = '/dashboard/myposts'
     template_name = 'dashboard/pages/add_images.html'
-    login_url = '/app/login/'
+    login_url = '/login/'
 
     def get_object(self, queryset=None):
         obj, created = HouseGallery.objects.get_or_create(
@@ -324,16 +325,22 @@ class UpdateGalleryView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
 
 
 class DashboardIndex(LoginRequiredMixin, TemplateView):
-    login_url = '/app/login'
+    login_url = '/login'
     template_name = 'dashboard/index.html'
 
 
-# class WebsiteIndexView(TemplateView):
-#     template_name = 'site/home.html'
+class WebsiteIndexView(ListView):
+    template_name = 'site/index.html'
+    paginate_by = 10
+    model = House
+    context_object_name = 'house_posts'
+
+    def get_queryset(self):
+        return self.model.objects.filter(is_published=True, is_available=True)
 
 
 class MyHousePostsView(LoginRequiredMixin, ListView):
-    login_url = '/app/login'
+    login_url = '/login'
     template_name = 'dashboard/pages/myhouses.html'
     paginate_by = 10
     context_object_name = 'house_posts'
@@ -348,7 +355,7 @@ class PublishPost(View):
     def dispatch(self, request, *args, **kwargs):
         return super(PublishPost, self).dispatch(request, *args, **kwargs)
 
-    def post(self, request,*args, **kwargs):
+    def post(self, request, *args, **kwargs):
         house = get_object_or_404(House, pk=self.kwargs['pk'])
         data = json.loads(request.body)
         publish_value = data['publish_value']
@@ -360,11 +367,137 @@ class PublishPost(View):
             message = "House Unpublished now its invisible to clients"
             house.is_published = False
         house.save()
-        return JsonResponse({'message': message, 'status': 'success', 'status_code':200})
+        return JsonResponse({'message': message, 'status': 'success', 'status_code': 200})
 
 
-class MyHouseBookingView(LoginRequiredMixin, ListView):
-    paginate_by = 10
+class MyClientHouseBookingView(LoginRequiredMixin, ListView):
+    # paginate_by = 10
     template_name = 'dashboard/pages/myhousebookings.html'
     model = Booking
+    context_object_name = 'bookings'
+    login_url = '/login'
+
+    def get_queryset(self):
+        return self.model.objects.filter(house__managed_by=self.request.user)
+
+
+class MyClientHousePaymentView(LoginRequiredMixin, ListView):
+    template_name = 'dashboard/pages/client_payments.html'
+    model = Payment
+    login_url = '/login'
+    context_object_name = 'payments'
+
+    def get_queryset(self):
+        return self.model.objects.filter(
+            house__managed_by=self.request.user,
+            status__iexact='success'
+        )
+
+
+class SearchAdminView(MyHousePostsView):
+    def get_queryset(self):
+        object_list = []
+        query = self.request.GET.get('q')
+        if query:
+            queryset = (Q(location__icontains=query))
+
+            object_list = House.objects.filter(queryset).distinct().exclude(
+                ~Q(managed_by__username=self.request.user.username)
+            )
+        return object_list
+
+    def get_context_data(self, **kwargs):
+        context = super(SearchAdminView, self).get_context_data(**kwargs)
+        context['in_search'] = True
+        if len(self.get_queryset()) > 0:
+            context['results_found'] = True
+        else:
+            context['results_found'] = False
+
+        context['house_posts'] = self.get_queryset()
+        context['query'] = self.request.GET.get('q', '')
+
+        return context
+
+
+class SearchView(TemplateView):
+    template_name = 'site/index.html'
+
+    def post(self, request, *args, **kwargs):
+        location = request.POST.get('location', '')
+        low_limit = request.POST.get('low_limit', '')
+        high_limit = request.POST.get('high_limit', '')
+        queryset = None
+        if location != '' and low_limit == '' and high_limit == '':
+            queryset = Q(location__icontains=location)
+
+        if location != '' and low_limit != '' and high_limit != '':
+            queryset = (
+                Q(ocation__icontains=location) and
+                (Q(rent_price__lte=low_limit, rent_price__gte=high_limit) |
+                 Q(sale_price__lte=low_limit, sale_price__gte=high_limit))
+            )
+        if location == '' and low_limit != '' and high_limit != '':
+            queryset = (
+                Q(rent_price__lte=low_limit, rent_price__gte=high_limit) |
+                Q(sale_price__lte=low_limit, sale_price__gte=high_limit)
+            )
+
+        houses = House.objects.filter(queryset) \
+            .exclude(is_published=False, is_available=False) \
+            .distinct()
+
+        print houses
+
+        return HttpResponse("found")
+
+
+class Checkout(TemplateView):
+    template_name = 'site/checkout.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(Checkout, self).get_context_data(**kwargs)
+        house = get_object_or_404(House, pk=self.kwargs['pk'])
+        context['house'] = house
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """This should be done on successful payment
+        doing it here now for demo purposes
+        """
+        user = request.user
+        try:
+            house = House.objects.get(id=request.POST.get('id'))
+            booking = Booking.objects.create(
+                house=house,
+                booked_by=user,
+                deposit_amount=request.POST.get('deposit_amount')
+            )
+            booking.save()
+            messages.success(request, "Your booking was placed successfully.")
+            return HttpResponseRedirect('/')
+        except House.DoesNotExist as e:
+            messages.error(request, "Could not find the house requested try again later")
+            return HttpResponseRedirect('/')
+
+
+class AboutView(TemplateView):
+    template_name = 'site/about.html'
+
+
+class ContactUsView(TemplateView):
+    template_name = 'site/contactus.html'
+
+    def post(self, request, *args, **kwargs):
+        name = request.POST.get('name', '')
+        email = request.POST.get('email', '')
+        message = request.POST.get('message', '')
+        contact = ContactUs.objects.create(
+            name=name,
+            message=message,
+            email=email
+        )
+        contact.save()
+        messages.success(request, "Message sent successfully")
+        return HttpResponseRedirect(reverse("smarthouse:web_index"))
 
