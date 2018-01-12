@@ -66,21 +66,17 @@
             <!-- User Info -->
             <div class="user-info">
                 <div class="image">
-                    <img src="images/user.png" width="48" height="48" alt="User" />
+                    <img src="{% static 'images/user.png' %}" width="48" height="48" alt="User" />
                 </div>
                 <div class="info-container">
-                    <div class="name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">John Doe</div>
-                    <div class="email">john.doe@example.com</div>
+                    <div class="name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></div>
+                    <div class="email">{{ request.user }}</div>
                     <div class="btn-group user-helper-dropdown">
                         <i class="material-icons" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">keyboard_arrow_down</i>
                         <ul class="dropdown-menu pull-right">
-                            <li><a href="javascript:void(0);"><i class="material-icons">person</i>Profile</a></li>
+                            <li><a href="{% url 'smarthouse:web_index' %}"><i class="material-icons">web</i>View Client Side</a></li>
                             <li role="seperator" class="divider"></li>
-                            <li><a href="javascript:void(0);"><i class="material-icons">group</i>Followers</a></li>
-                            <li><a href="javascript:void(0);"><i class="material-icons">shopping_cart</i>Sales</a></li>
-                            <li><a href="javascript:void(0);"><i class="material-icons">favorite</i>Likes</a></li>
-                            <li role="seperator" class="divider"></li>
-                            <li><a href="javascript:void(0);"><i class="material-icons">input</i>Sign Out</a></li>
+                            <li><a href="{% url 'smarthouse:logout' %}"><i class="material-icons">input</i>Sign Out</a></li>
                         </ul>
                     </div>
                 </div>
@@ -122,7 +118,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a href="{% url 'smarthouse:map_view' %}">
                             <i class="material-icons">place</i>
                             <span>View On Map</span>
                         </a>
@@ -157,41 +153,43 @@
                             <i class="material-icons">playlist_add_check</i>
                         </div>
                         <div class="content">
-                            <div class="text">NEW TASKS</div>
-                            <div class="number count-to" data-from="0" data-to="125" data-speed="15" data-fresh-interval="20"></div>
+                            <div class="text">TOTAL HOUSES</div>
+                            <div class="number count-to" data-from="0" data-to="" data-speed="15" data-fresh-interval="20">
+                                {{ total_houses }}
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
                     <div class="info-box bg-cyan hover-expand-effect">
                         <div class="icon">
-                            <i class="material-icons">help</i>
+                            <i class="material-icons">chrome_reader_mode</i>
                         </div>
                         <div class="content">
-                            <div class="text">NEW TICKETS</div>
-                            <div class="number count-to" data-from="0" data-to="257" data-speed="1000" data-fresh-interval="20"></div>
+                            <div class="text">BOOKED HOUSES</div>
+                            <div class="number count-to" data-from="0" data-to="257" data-speed="1000" data-fresh-interval="20">{{ booked_houses }}</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
                     <div class="info-box bg-light-green hover-expand-effect">
                         <div class="icon">
-                            <i class="material-icons">forum</i>
+                            <i class="material-icons">class</i>
                         </div>
                         <div class="content">
-                            <div class="text">NEW COMMENTS</div>
-                            <div class="number count-to" data-from="0" data-to="243" data-speed="1000" data-fresh-interval="20"></div>
+                            <div class="text">AVAILABLE</div>
+                            <div class="number count-to" data-from="0" data-to="243" data-speed="1000" data-fresh-interval="20">{{ vacant_houses }}</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
                     <div class="info-box bg-orange hover-expand-effect">
                         <div class="icon">
-                            <i class="material-icons">person_add</i>
+                            <i class="material-icons">help</i>
                         </div>
                         <div class="content">
-                            <div class="text">NEW VISITORS</div>
-                            <div class="number count-to" data-from="0" data-to="1225" data-speed="1000" data-fresh-interval="20"></div>
+                            <div class="text">UN PUBLISHED </div>
+                            <div class="number count-to" data-from="0" data-to="1225" data-speed="1000" data-fresh-interval="20">{{ unpublished_houses }}</div>
                         </div>
                     </div>
                 </div>
@@ -202,7 +200,13 @@
             <div class="row clearfix">
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
                     {% block content %}
+                        <div class="card">
+                        <div class="body">
+                            <div id="map" style="width: 100%; height: auto;">
 
+                            </div>
+                        </div>
+                        </div>
 
                     {% endblock %}
                 </div>
@@ -211,6 +215,131 @@
         </div>
     </section>
     {% include 'js.html' %}
+
+ <script>
+                        var map;
+
+                        function initAutocomplete() {
+
+                            var marker = false;
+                            map = new google.maps.Map(document.getElementById('gmap_markers'), {
+                                center: {lat: -1.2885962273241198, lng: 36.823039054870605},
+                                zoom: 13,
+                                mapTypeId: 'roadmap'
+// mapTypeId: 'hybrid'
+                            });
+
+
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(function (position) {
+                                    initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
+                                });
+                            }
+
+                            map.data.addListener('mouseover', function (event) {
+                                        document.getElementById('info-box').innerHTML =
+                                            event.feature.getProperty('message');
+                                    });
+
+
+// Create the search box and link it to the UI element.
+                            var input = document.getElementById('pac-input');
+                            var searchBox = new google.maps.places.SearchBox(input);
+                            map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+// Bias the SearchBox results towards current map's viewport.
+                            map.addListener('bounds_changed', function () {
+                                searchBox.setBounds(map.getBounds());
+                            });
+
+                            var markers = [];
+                            var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';
+                            var icons = {
+                                parking: {
+                                    icon: iconBase + 'parking_lot_maps.png'
+                                },
+                                library: {
+                                    icon: iconBase + 'library_maps.png'
+                                },
+                                info: {
+                                    icon: iconBase + 'info-i_maps.png'
+                                }
+                            };
+
+                            // insert ajax request here to fetch all coords
+
+                            $.ajax({
+                                type: 'GET',
+                                url: '{% url 'smarthouse:map_data_endpoint' %}',
+                                dataType: 'json',
+                                contentType: 'application/json',
+                                traditional: true,
+                                success: function (dataItems) {
+                                    console.log(dataItems);
+
+                                    var features = [];
+                                    dataItems.forEach(function (dataItem) {
+                                        var feature = {
+                                            position: new google.maps.LatLng(dataItem['fields']['lat'], dataItem['fields']['lng']),
+                                            type: 'info',
+                                            message: 'House Located at '+dataItem['fields']['location']
+                                        };
+                                        features.push(feature);
+                                        console.log(features)
+
+                                    });
+
+
+                                    features.forEach(function (feature) {
+                                        var marker = new google.maps.Marker({
+                                            position: feature.position,
+                                            {#                                            icon: icons[feature.type].icon,#}
+                                            map: map
+                                        });
+
+                                        markers.push(marker);
+
+
+                                    });
+
+
+                                }
+                            });
+
+
+// Listen for the event fired when the user selects a prediction and retrieve
+// more details for that place.
+                            searchBox.addListener('places_changed', function () {
+                                var places = searchBox.getPlaces();
+
+                                if (places.length === 0) {
+                                    return;
+                                }
+
+// For each place, get the icon, name and location.
+                                var bounds = new google.maps.LatLngBounds();
+                                places.forEach(function (place) {
+                                    if (!place.geometry) {
+                                        console.log("Returned place contains no geometry");
+                                        return;
+                                    }
+
+
+                                    if (place.geometry.viewport) {
+// Only geocodes have viewport.
+                                        bounds.union(place.geometry.viewport);
+                                    } else {
+                                        bounds.extend(place.geometry.location);
+                                    }
+                                });
+                                map.fitBounds(bounds);
+                            });
+
+
+                        }
+                    </script>
+                    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC85mWXDYoa_O8r2NYK3ffyNZR2y2xYPxM&libraries=places&callback=initAutocomplete"
+                            async defer></script>
 </body>
 
 </html>

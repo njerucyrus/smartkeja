@@ -1,21 +1,47 @@
 <div class="row clearfix">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <div class="container-fluid">
-            <form method="post" action="{% url 'smarthouse:web_search' %}">
-                <div class="col-md-3">
-                    <input type="text" class="form-control" name="location" placeholder="Search By Location">
+        <form method="get" action="{% url 'smarthouse:search' %}">
+            <div class="row">
+                <div class="col-md-8">
+                    <p>Search by location here</p>
+                    <select class="form-control show-tick" data-live-search="true" id="locations" name="location">
+                        {% for house in house_options %}
+                                <option value="{{ house.location }}">{{ house.location }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="col-md-2">
-                    <input type="text" class="form-control" name="low_limit" placeholder="Type the lowest cost">
+                <div class="col-md-4">
+                    <div class="demo-switch">
+                        <div class="switch">
+                            <p>Include price range filter</p>
+                            <label>NO<input type="checkbox" id="switch"><span class="lever"></span>YES</label>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <input type="text" class="form-control" name="high_limit" placeholder="Type the highest cost">
+            </div>
+            <section id="price-range">
+            <div class="row">
+                <div class="col-md-8">
+                    <div id="range-slider">
+                        <div class="irs-demo">
+                            <input type="text" id="range" value=""/>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    {% csrf_token %}
-                    <button class="btn btn-primary" type="submit">SEARCH</button>
-                </div>
-            </form>
+                <input type="hidden" name="low_price" id="low_price" value="" >
+                <input type="hidden" name="high_price" id="high_price" value="" >
+            </div>
+
+            </section>
+
+        <div class="row">
+            <div class="col-md-8" style="margin-bottom: 15px!important;margin-top: 15px!important;">
+                <button class="btn btn-primary  waves-effect pull-right">SEARCH</button>
+            </div>
         </div>
+        </form>
+        </div>
+
     </div>
 </div>

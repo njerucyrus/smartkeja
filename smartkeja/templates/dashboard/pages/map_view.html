@@ -1,0 +1,290 @@
+{% extends 'dashboard/index.html' %}
+{% load staticfiles %}
+
+{% block widgets %}
+{% endblock %}
+
+{% block content %}
+
+    <style>
+        /* Always set the map height explicitly to define the size of the div
+         * element that contains the map. */
+        #map {
+            height: 100%;
+        }
+
+        /* Optional: Makes the sample page fill the window. */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #description {
+            font-family: Roboto;
+            font-size: 15px;
+            font-weight: 300;
+        }
+
+        #infowindow-content .title {
+            font-weight: bold;
+        }
+
+        #infowindow-content {
+            display: none;
+        }
+
+        #map #infowindow-content {
+            display: inline;
+        }
+
+        .pac-card {
+            margin: 10px 10px 0 0;
+            border-radius: 2px 0 0 2px;
+            box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            outline: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            background-color: #fff;
+            font-family: Roboto;
+        }
+
+        #pac-container {
+            padding-bottom: 12px;
+            margin-right: 12px;
+        }
+
+        .pac-controls {
+            display: inline-block;
+            padding: 5px 11px;
+        }
+
+        .pac-controls label {
+            font-family: Roboto;
+            font-size: 13px;
+            font-weight: 300;
+        }
+
+        #pac-input {
+            background-color: #fff;
+            font-family: Roboto;
+            font-size: 15px;
+            font-weight: 300;
+            margin-left: 12px;
+            padding: 0 11px 0 13px;
+            text-overflow: ellipsis;
+            width: 400px;
+        }
+
+        #pac-input:focus {
+            border-color: #4d90fe;
+        }
+
+        #title {
+            color: #fff;
+            background-color: #4d90fe;
+            font-size: 25px;
+            font-weight: 500;
+            padding: 6px 12px;
+        }
+
+        #target {
+            width: 345px;
+        }
+
+        {% comment %}
+        start for text area css
+        {% endcomment %}
+
+        .textarea-container {
+            position: relative;
+            width: 50%;
+        }
+
+        textarea, .textarea-size {
+            min-height: 25px;
+            font-family: sans-serif;
+            font-size: 14px;
+            box-sizing: border-box;
+            padding: 4px;
+            border: 1px solid;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        textarea {
+            height: 100%;
+            position: absolute;
+            resize: none;
+            white-space: normal;
+        }
+
+        .textarea-size {
+            visibility: hidden;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        {% comment %} end of text area css {% endcomment %}
+
+        .lbl-input {
+            padding-left: 5px;
+            color: #000;
+        }
+
+        .custom-input {
+            height: 45px;
+
+        }
+    </style>
+    <div class="row clearfix">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <div class="card">
+                <div class="header">
+                    <h2>
+                        My Houses locations on map
+                    </h2>
+
+                </div>
+                <div class="body">
+                    <input id="pac-input" class="controls" type="text" placeholder="Search your house location here"
+                           style="margin-top: 10px;">
+
+                    <div id="gmap_markers" class="gmap" style="height:550px;"></div>
+                    <div id="info-box">
+
+                    </div>
+
+                    <script>
+                        var map;
+
+                        function initAutocomplete() {
+
+                            var marker = false;
+                            map = new google.maps.Map(document.getElementById('gmap_markers'), {
+                                center: {lat: -1.2885962273241198, lng: 36.823039054870605},
+                                zoom: 13,
+                                mapTypeId: 'roadmap'
+// mapTypeId: 'hybrid'
+                            });
+
+
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(function (position) {
+                                    initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
+                                });
+                            }
+
+                            map.data.addListener('mouseover', function (event) {
+                                        document.getElementById('info-box').innerHTML =
+                                            event.feature.getProperty('message');
+                                    });
+
+
+// Create the search box and link it to the UI element.
+                            var input = document.getElementById('pac-input');
+                            var searchBox = new google.maps.places.SearchBox(input);
+                            map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+// Bias the SearchBox results towards current map's viewport.
+                            map.addListener('bounds_changed', function () {
+                                searchBox.setBounds(map.getBounds());
+                            });
+
+                            var markers = [];
+                            var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';
+                            var icons = {
+                                parking: {
+                                    icon: iconBase + 'parking_lot_maps.png'
+                                },
+                                library: {
+                                    icon: iconBase + 'library_maps.png'
+                                },
+                                info: {
+                                    icon: iconBase + 'info-i_maps.png'
+                                }
+                            };
+
+                            // insert ajax request here to fetch all coords
+
+                            $.ajax({
+                                type: 'GET',
+                                url: '{% url 'smarthouse:map_data_endpoint' %}',
+                                dataType: 'json',
+                                contentType: 'application/json',
+                                traditional: true,
+                                success: function (dataItems) {
+                                    console.log(dataItems);
+
+                                    var features = [];
+                                    dataItems.forEach(function (dataItem) {
+                                        var feature = {
+                                            position: new google.maps.LatLng(dataItem['fields']['lat'], dataItem['fields']['lng']),
+                                            type: 'info',
+                                            message: 'House Located at '+dataItem['fields']['location']
+                                        };
+                                        features.push(feature);
+                                        console.log(features)
+
+                                    });
+
+
+                                    features.forEach(function (feature) {
+                                        var marker = new google.maps.Marker({
+                                            position: feature.position,
+                                            {#                                            icon: icons[feature.type].icon,#}
+                                            map: map
+                                        });
+
+                                        markers.push(marker);
+
+
+                                    });
+
+
+                                }
+                            });
+
+
+// Listen for the event fired when the user selects a prediction and retrieve
+// more details for that place.
+                            searchBox.addListener('places_changed', function () {
+                                var places = searchBox.getPlaces();
+
+                                if (places.length === 0) {
+                                    return;
+                                }
+
+// For each place, get the icon, name and location.
+                                var bounds = new google.maps.LatLngBounds();
+                                places.forEach(function (place) {
+                                    if (!place.geometry) {
+                                        console.log("Returned place contains no geometry");
+                                        return;
+                                    }
+
+
+                                    if (place.geometry.viewport) {
+// Only geocodes have viewport.
+                                        bounds.union(place.geometry.viewport);
+                                    } else {
+                                        bounds.extend(place.geometry.location);
+                                    }
+                                });
+                                map.fitBounds(bounds);
+                            });
+
+
+                        }
+                    </script>
+                    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC85mWXDYoa_O8r2NYK3ffyNZR2y2xYPxM&libraries=places&callback=initAutocomplete"
+                            async defer></script>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

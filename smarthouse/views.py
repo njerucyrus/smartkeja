@@ -10,6 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.messages.views import SuccessMessageMixin
+from django.core import serializers
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
@@ -27,7 +28,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, RedirectView, ListView, DetailView
 from django.views.generic.edit import DeleteView, UpdateView
 from django.urls import reverse
-from smarthouse.models import Agent, House, HouseGallery, Booking, Payment, ContactUs
+from smarthouse.models import Agent, House, HouseGallery, Booking, Payment, ContactUs, HouseOwner
 
 
 class CreateAccountView(TemplateView):
@@ -53,6 +54,11 @@ class CreateAccountView(TemplateView):
                 user.set_password(request.POST.get('password'))
                 user.is_staff = True
                 user.save()
+                owner = HouseOwner.objects.create(
+                    user=user,
+                    phone_number=request.POST.get('phone_number1')
+                )
+                owner.save()
                 login(request, user)
                 messages.success(request, "Account created successfully")
                 return HttpResponseRedirect(reverse("smarthouse:dashboard_index"))
@@ -328,6 +334,23 @@ class DashboardIndex(LoginRequiredMixin, TemplateView):
     login_url = '/login'
     template_name = 'dashboard/index.html'
 
+    def get_stats(self):
+        stats = {}
+        booked_houses = House.objects.filter(managed_by=self.request.user, is_available=False).count()
+        total_houses = House.objects.filter(managed_by=self.request.user).count()
+        vacant_houses = House.objects.filter(managed_by=self.request.user, is_available=True).count()
+        unpublished_houses = House.objects.filter(managed_by=self.request.user, is_published=False).count()
+        stats['booked_houses'] = booked_houses
+        stats['total_houses'] = total_houses
+        stats['vacant_houses'] = vacant_houses
+        stats['unpublished_houses'] = unpublished_houses
+        return stats
+
+    def get_context_data(self, **kwargs):
+        context = super(DashboardIndex, self).get_context_data(**kwargs)
+        context.update(self.get_stats())
+        return context
+
 
 class WebsiteIndexView(ListView):
     template_name = 'site/index.html'
@@ -420,36 +443,45 @@ class SearchAdminView(MyHousePostsView):
         return context
 
 
-class SearchView(TemplateView):
+class SearchView(ListView):
     template_name = 'site/index.html'
+    model = House
 
-    def post(self, request, *args, **kwargs):
-        location = request.POST.get('location', '')
-        low_limit = request.POST.get('low_limit', '')
-        high_limit = request.POST.get('high_limit', '')
-        queryset = None
-        if location != '' and low_limit == '' and high_limit == '':
-            queryset = Q(location__icontains=location)
-
-        if location != '' and low_limit != '' and high_limit != '':
+    def get_queryset(self):
+        location = self.request.GET.get('location', '')
+        low_price = self.request.GET.get('low_price')
+        high_price = self.request.GET.get('high_price')
+        houses = []
+        if high_price and low_price:
             queryset = (
-                Q(ocation__icontains=location) and
-                (Q(rent_price__lte=low_limit, rent_price__gte=high_limit) |
-                 Q(sale_price__lte=low_limit, sale_price__gte=high_limit))
-            )
-        if location == '' and low_limit != '' and high_limit != '':
-            queryset = (
-                Q(rent_price__lte=low_limit, rent_price__gte=high_limit) |
-                Q(sale_price__lte=low_limit, sale_price__gte=high_limit)
+                Q(location__icontains=location) and
+                Q(sale_price__gte=low_price, sale_price__lte=high_price) |
+                Q(rent_price__gte=low_price, rent_price__lte=high_price)
             )
 
-        houses = House.objects.filter(queryset) \
-            .exclude(is_published=False, is_available=False) \
-            .distinct()
+            houses = House.objects.filter(queryset).distinct()
 
-        print houses
+        else:
 
-        return HttpResponse("found")
+            queryset = (
+                Q(location__icontains=location)
+            )
+            houses = House.objects.filter(queryset).distinct()
+
+        return houses
+
+    def get_context_data(self, **kwargs):
+        context = super(SearchView, self).get_context_data(**kwargs)
+        context['search_results'] = self.get_queryset()
+        context['count'] = 0
+        if len(self.get_queryset()) > 0:
+            context['results_found'] = True
+            context['count'] = len(self.get_queryset())
+        else:
+            context['results_found'] = False
+        context['in_search'] = True
+
+        return context
 
 
 class Checkout(TemplateView):
@@ -501,3 +533,61 @@ class ContactUsView(TemplateView):
         messages.success(request, "Message sent successfully")
         return HttpResponseRedirect(reverse("smarthouse:web_index"))
 
+
+class MapDataView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        houses = House.objects.filter(managed_by=self.request.user)
+        # boards = Board.objects.all()
+        return HttpResponse(serializers.serialize('json', houses), content_type='application/json')
+
+
+class MapView(LoginRequiredMixin, TemplateView):
+    login_url = '/login'
+    template_name = 'dashboard/pages/map_view.html'
+
+
+from smarthouse.AfricasTalkingGateway import AfricasTalkingGateway, AfricasTalkingGatewayException
+
+
+def test_checkout(request):
+    username = "sandbox"
+    apiKey = "a2c848d040ee2afd3d3b86b4ae7f38de63ecd9f9afb1504cf03230511a5c9a53"
+    # Create an instance of our awesome gateway class and pass your credentials
+    gateway = AfricasTalkingGateway(username, apiKey)
+    # *************************************************************************************
+    #  NOTE: If connecting to the sandbox:
+    #
+    #  1. Use "sandbox" as the username
+    #  2. Use the apiKey generated from your sandbox application
+    #     https://account.africastalking.com/apps/sandbox/settings/key
+    #  3. Add the "sandbox" flag to the constructor
+    #
+    #  gateway = AfricasTalkingGateway(username, apiKey, "sandbox");
+    # **************************************************************************************
+    # Specify the name of your Africa's Talking payment product
+    productName = "SmartKeja"
+    # The phone number of the customer checking out
+    phoneNumber = "+254703191981"
+    # The 3-Letter ISO currency code for the checkout amount
+    currencyCode = "KES"
+    # The checkout amount
+    amount = 100.50
+    # Any metadata that you would like to send along with this request
+    # This metadata will be  included when we send back the final payment notification
+    metadata = {"agentId": "654",
+                "productId": "321"}
+    providerChannel = "123456"  # Initiate the checkout. If successful, you will get back a transactionId
+    try:
+        transactionId = gateway.initiateMobilePaymentCheckout(productName,
+                                                              phoneNumber,
+                                                              currencyCode,
+                                                              amount,
+
+                                                              metadata,
+                                                              providerChannel
+                                                              )
+
+        return HttpResponse("The transactionId is " + transactionId)
+
+    except AfricasTalkingGatewayException, e:
+        return HttpResponse("Received error response: %s" % str(e))

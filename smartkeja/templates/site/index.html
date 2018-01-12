@@ -1,24 +1,21 @@
 {% extends 'site/base.html' %}
 {% load staticfiles %}
 {% block content %}
+
     <div class="row clearfix">
         <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
 
             <div class="body">
 
-                <div class="input-group">
+                <div>
                     {% include 'site/search_template.html' %}
                 </div>
             </div>
-            {% if search_text and boards %}
-                <div class="body" style="color: green; margin-bottom: 10px; font-weight: bold">
-                    Showing results for "{{ search_text }}"
-                </div>
-            {% endif %}
+
         </div>
     </div>
 
-     {% if messages %}
+    {% if messages %}
         <ul class="list-group" style="list-style: none">
             {% for message in messages %}
                 <li class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
@@ -28,6 +25,129 @@
                 </li>
             {% endfor %}
         </ul>
+    {% endif %}
+
+    {% if results_found %}
+        <div>
+            <p style="font-weight: bold">Showing {{ count }} results <span><a href="{% url 'smarthouse:web_index' %}">Go back to home page</a> </span></p>
+        <br>
+        </div>
+
+        {% for house in search_results %}
+            <div class="row clearfix">
+
+                <div class="card" style="" onmouseover="this.style.background='#f0f0f0'"
+                     onmouseout="this.style.background='white';">
+                    <div class="header">
+                        <h2>
+                            <a href="{{ house.get_absolute_url }}" style="color: #2196F3">
+                                House Located At <i class="material-icons">room</i> {{ house.location }}
+                            </a>
+                            <small></small>
+                        </h2>
+                        <ul class="header-dropdown m-r--5">
+                            <li class="dropdown">
+                                <a href="javascript:void(0);" class="dropdown-toggle" data-toggle="dropdown"
+                                   role="button" aria-haspopup="true" aria-expanded="false">
+                                    <i class="material-icons">more_vert</i>
+                                </a>
+                                <ul class="dropdown-menu pull-right">
+                                    <li>
+                                        {% if house.on_sale %}
+                                            <li>
+                                                <a href="{% url 'smarthouse:checkout' pk=house.pk %}">Buy Now</a>
+                                            </li>
+                                        {% else %}
+                                            <li>
+                                                <a href="{% url 'smarthouse:checkout' pk=house.pk %}">Book Now</a>
+                                            </li>
+                                        {% endif %}
+                                    <li>
+                                        <a href="{{ house.get_absolute_url }}">More Info about this house..</a>
+                                    </li>
+
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="body">
+
+                        <div class="media">
+                            <div class="media-left">
+                                <a href="javascript:void(0);">
+                                    <img class="media-object thumbnail" src="{{ house.primary_img.url }}"
+                                         width="280" height="150">
+                                </a>
+                            </div>
+                            <div class="media-body">
+                                <div class="row">
+                                    <div class="col-md-7">
+                                        <h4 class="media-heading">Description</h4>
+
+                                        <p style="font-family: Roboto; font-size: 16px;">A {{ house.bedrooms }} located
+                                            at {{ house.location }}
+                                            {% if house.on_sale %}Going for KSH {{ house.sale_price }}
+                                            {% else %}
+                                                With Rent fee of KSH {{ house.rent_price }} Per Month
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <style>
+                                            li {
+                                                margin-top: 5px;
+                                            }
+                                        </style>
+                                        <ul style="list-style: none">
+                                            {% if house.on_sale %}
+                                                <li>
+                                                    <a href="{% url 'smarthouse:checkout' pk=house.pk %}"
+                                                       class="btn btn-primary">BUY NOW</a>
+                                                </li>
+                                            {% else %}
+                                                <li>
+                                                    <a href="{% url 'smarthouse:checkout' pk=house.pk %}"
+                                                       class="btn btn-primary">BOOK NOW</a>
+                                                </li>
+                                            {% endif %}
+                                            <li>
+                                                <button type="button" class="btn btn-default waves-effect m-r-20"
+                                                        data-toggle="modal" data-target="#largeModal">VIEW ON MAP
+                                                </button>
+
+                                            </li>
+                                            <li>
+                                                <a href="{{ house.get_absolute_url }}">More Info about this house..</a>
+                                            </li>
+
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="panel-footer">
+                        <p>
+                            <small style="font-size: 16px;">Status <span
+                                    style="color: teal;">
+                                           {% if not house.is_available %} Not Available{% else %}
+                                               Available {% endif %}
+                                        </span>
+                            </small>
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+        {% endfor %}
+    {% elif not results_found and in_search%}
+        <div class="alert alert-info">
+        No match found.
+        <span><a href="{% url 'smarthouse:web_index' %}">Go back to home page</a> </span>
+        </div>
     {% endif %}
 
     {% if house_posts %}
@@ -101,11 +221,13 @@
                                         <ul style="list-style: none">
                                             {% if house.on_sale %}
                                                 <li>
-                                                    <a href="{% url 'smarthouse:checkout' pk=house.pk %}" class="btn btn-primary">BUY NOW</a>
+                                                    <a href="{% url 'smarthouse:checkout' pk=house.pk %}"
+                                                       class="btn btn-primary">BUY NOW</a>
                                                 </li>
                                             {% else %}
                                                 <li>
-                                                    <a href="{% url 'smarthouse:checkout' pk=house.pk %}" class="btn btn-primary">BOOK NOW</a>
+                                                    <a href="{% url 'smarthouse:checkout' pk=house.pk %}"
+                                                       class="btn btn-primary">BOOK NOW</a>
                                                 </li>
                                             {% endif %}
                                             <li>
@@ -187,10 +309,11 @@
             </nav>
         </div>
 
-    {% else %}
+    {% elif not search_results and not house_posts %}
         <div class="alert alert-info">
             <p>No House Posts</p>
         </div>
+
     {% endif %}
 
 
@@ -211,7 +334,67 @@
         </div>
     </div>
 
+
+
     <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+
+
+    <script>
+
+        $(function () {
+
+            $("#range").ionRangeSlider({
+                hide_min_max: true,
+                keyboard: true,
+                min: 0,
+                max: 200000,
+                from: 1000,
+                to: 190000,
+                type: 'double',
+                step: 1,
+                prefix: "Ksh",
+                grid: true
+            });
+
+        });
+    </script>
+
+
+
+    <script>
+
+
+        $(document).ready(function (e) {
+            e.preventDefault;
+
+            $('#price-range').hide();
+            $('#range').on('change', function () {
+                var data = $(this).val();
+
+                data = data.split(';');
+                $('#low_price').val(data[0]);
+                $('#high_price').val(data[1]);
+            });
+            $('#switch').on('click', function () {
+                var checked = document.getElementById("switch").checked;
+                if (checked === true) {
+                    $('#price-range').show();
+                    var data = $("#range").val();
+
+                    data = data.split(';');
+                    $('#low_price').val(data[0]);
+                    $('#high_price').val(data[1]);
+                } else {
+                    $('#price-range').hide();
+                }
+            })
+
+
+        })
+
+    </script>
+
+
 
     <script>
 

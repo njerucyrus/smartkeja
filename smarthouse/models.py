@@ -17,6 +17,11 @@ class Agent(models.Model):
         return self.agency_name
 
 
+class HouseOwner(models.Model):
+    user = models.OneToOneField(User)
+    phone_number = models.CharField(max_length=13, )
+
+
 class House(models.Model):
     managed_by = models.ForeignKey(User)
     lat = models.FloatField()
@@ -31,6 +36,9 @@ class House(models.Model):
     primary_img = models.ImageField(upload_to='uploads/')
     is_published = models.BooleanField(default=False)
     date_posted = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-date_posted', )
 
     def get_absolute_url(self):
         return reverse('smarthouse:house_detail', args=[self.pk])

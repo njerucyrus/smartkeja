@@ -7,14 +7,14 @@
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <title>Welcome To | SmartKeja</title>
     <!-- Favicon-->
-{#    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">#}
-{% include 'css.html' %}
-<style>
-    li a:hover{
-        background-color: white;
-        color: green;
-    }
-</style>
+    {#    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">#}
+    {% include 'css.html' %}
+    <style>
+        li a:hover {
+            background-color: white;
+            color: green;
+        }
+    </style>
 
 </head>
 <body class="theme-blue">
@@ -27,17 +27,19 @@
                data-target="#navbar-collapse" aria-expanded="false"></a>
 
             <a class="navbar-brand" href="{% url 'smarthouse:web_index' %}">SmartKeja</a>
-{#            <div class="col-md-6">#}
-{#            <input type="text" placeholder="search here" class="form-control" >#}
-{#            </div>#}
-           </div>
+            {#            <div class="col-md-6">#}
+            {#            <input type="text" placeholder="search here" class="form-control" >#}
+            {#            </div>#}
+        </div>
         <div class="collapse navbar-collapse" id="navbar-collapse">
 
             <ul class="nav navbar-nav navbar-right">
 
-                <li><a href="{% url 'smarthouse:web_index' %}" style="color: white;font-weight: bold; font-family: Roboto">HOME</a></li>
+                <li><a href="{% url 'smarthouse:web_index' %}"
+                       style="color: white;font-weight: bold; font-family: Roboto">HOME</a></li>
                 <li><a href="#" class="" style="color: white; font-weight: bold; font-family: Roboto">ABOUT US</a></li>
-                <li><a href="{% url 'smarthouse:contactus' %}" class="" style="color: white;font-weight: bold;font-family: Roboto">CONTACT US</a></li>
+                <li><a href="{% url 'smarthouse:contactus' %}" class=""
+                       style="color: white;font-weight: bold;font-family: Roboto">CONTACT US</a></li>
 
                 <li class="dropdown pull-right">
                     <a href="javascript:void(0);" class="dropdown-toggle" data-toggle="dropdown"
@@ -46,32 +48,30 @@
                     </a>
                     <ul class="dropdown-menu pull-right">
 
-{#                        {% if request.user.is_authenticated %}#}
-{#                            <li>#}
-{#                            <a href=""><i class="material-icons" style="color: green;">person</i>#}
-{#                                <span style="text-transform: uppercase">{{ request.user.username}}</span>#}
-{#                            </a>#}
-{#                        </li>#}
-{##}
-{#                            {% if account_type == 'user_account' %}#}
-{##}
-{#                            #}
-{#                                {% elif account_type == 'service_provider_account' or account_type == 'advertiser' %}#}
-{#                                    <li>#}
-{#                                        <a href="{% url 'dashboard:admin_index' %}"><i class="material-icons" style="color: green">desktop_mac</i>DASHBOARD</a>#}
-{#                                    </li>#}
-{#                                {% endif %}#}
-{##}
-{##}
-{##}
-{#                       <li>#}
-{#                           <a href="{% url 'board:logout' %}"><i class="material-icons" style="color: green">power_settings_new</i>LOGOUT</a>#}
-{#                       </li>#}
-{#                        {% else %}#}
-{#                             <li>#}
-{#                           <a href="{% url 'board:login' %}"><i class="material-icons" style="color: green">power_settings_new</i>LOGIN</a>#}
-{#                       </li>#}
-{#                        {% endif %}#}
+                        {% if request.user.is_authenticated %}
+                            <li>
+                                <a href=""><i class="material-icons" style="color: green;">person</i>
+                                    <span><b>@ {{ request.user.username  | lower  }}</b></span>
+                                </a>
+                            </li>
+
+                            {% if account_type == 'owner' or account_type == 'agent' %}
+
+                                <li>
+                                    <a href="{% url 'smarthouse:dashboard_index' %}"><i class="material-icons"
+                                                                                   style="color: green">desktop_mac</i>Dashboard</a>
+                                </li>
+                            {% endif %}
+
+
+                            <li>
+                                <a href="{% url 'smarthouse:logout' %}"><i class="material-icons" style="color: green">power_settings_new</i>Logout</a>
+                            </li>
+                        {% else %}
+                            <li>
+                                <a href="{% url 'smarthouse:login' %}"><i class="material-icons" style="color: green">power_settings_new</i>Login</a>
+                            </li>
+                        {% endif %}
                     </ul>
                 </li>
             </ul>
@@ -98,14 +98,14 @@
         </div>
         <!-- #Menu -->
         <!-- Footer -->
-{#        <div class="legal">#}
-{#            <div class="copyright">#}
-{#                &copy; 2017 - 2018 <a href="javascript:void(0);">H-Board Leading Outdoor Software</a>.#}
-{#            </div>#}
-{#            <div class="version">#}
-{#                <b>Version: </b> 1.0 Beta#}
-{#            </div>#}
-{#        </div>#}
+        {#        <div class="legal">#}
+        {#            <div class="copyright">#}
+        {#                &copy; 2017 - 2018 <a href="javascript:void(0);">H-Board Leading Outdoor Software</a>.#}
+        {#            </div>#}
+        {#            <div class="version">#}
+        {#                <b>Version: </b> 1.0 Beta#}
+        {#            </div>#}
+        {#        </div>#}
         <!-- #Footer -->
     </aside>
     <!-- #END# Left Sidebar -->

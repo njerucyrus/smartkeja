@@ -1,7 +1,7 @@
 from django.conf.urls import url
 
 from . import views
-
+from smarthouse import ussd_api
 urlpatterns = [
 
     url(r'^$', views.WebsiteIndexView.as_view(), name='web_index'),
@@ -27,5 +27,12 @@ urlpatterns = [
     url(r'^checkout/(?P<pk>\d+)/$', views.Checkout.as_view(), name='checkout'),
     url(r'^contactus/$', views.ContactUsView.as_view(), name='contactus'),
     url(r'^about/$', views.AboutView.as_view(), name='about'),
+    url(r'^api/mapdata/$', views.MapDataView.as_view(), name='map_data_endpoint'),
+    url(r'^mapview/$', views.MapView.as_view(), name='map_view'),
+    url(r'^search/$', views.SearchView.as_view(), name='search'),
+    url(r'^testcheckout/$', views.test_checkout, name='test_checkout'),
+    url(r'^api/houseslist/$', ussd_api.list_houses, name='houses_list'),
+    url(r'^api/search/(?P<location>\w+)$', ussd_api.search_house, name='houses_list_search')
+
 
 ]

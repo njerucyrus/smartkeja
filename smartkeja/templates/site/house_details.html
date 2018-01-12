@@ -43,7 +43,8 @@
                                         {% endif %}
                                         <br>
                                         This property is managed by {{ house.managed_by.get_full_name }}<br>
-                                        For more information you can contact him via {{ house.managed_by.email }}
+                                        For more information you can contact him via {{ house.managed_by.email }} or
+                                        {{ phone_number }}
                                     </p>
 
                                     <a href="{% url 'smarthouse:checkout' pk=house.pk %}" class="btn btn-primary">Checkout</a>

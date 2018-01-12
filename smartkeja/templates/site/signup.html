@@ -96,6 +96,17 @@
                         <input type="email" class="form-control" name="email" placeholder="Email Address" required>
                     </div>
                 </div>
+                <section id="owner_section">
+                    <div class="input-group">
+                            <span class="input-group-addon">
+                                <i class="material-icons">contact_phone</i>
+                            </span>
+                        <div class="form-line">
+                            <input type="text" class="form-control" name="phone_number1" placeholder="Phone Number"
+                                   required>
+                        </div>
+                    </div>
+                </section>
 
                 <section id="agent_section">
                     <div class="input-group">
@@ -175,6 +186,7 @@
     $(document).ready(function (e) {
         e.preventDefault;
         $('#agent_section').hide();
+        $('#owner_section').hide();
     });
 
 </script>
@@ -192,10 +204,12 @@
         if (account_type === 'house_owner') {
             $('#account_type_hidden').val('house_owner');
             $('#agent_section').hide();
+            $('#owner_section').show();
         }
         if (account_type === 'client') {
             $('#account_type_hidden').val('client');
             $('#agent_section').hide();
+            $('#owner_section').hide();
         }
 
     }
