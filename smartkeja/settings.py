@@ -145,8 +145,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 
-
 LIVE = True
+
 if LIVE:
     # Update database configuration with $DATABASE_URL.
     db_from_env = dj_database_url.config(conn_max_age=500)

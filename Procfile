@@ -1,1 +1,1 @@
-web: gunicorn vision.wsgi --log-file -
+web: gunicorn smartkeja.wsgi --log-file -
