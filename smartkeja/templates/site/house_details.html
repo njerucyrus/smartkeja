@@ -70,10 +70,7 @@
                                             <!-- Wrapper for slides -->
                                             <div class="carousel-inner" role="listbox">
                                                 <div class="item active">
-                                                    <img src="
-
-
-                                                            {% if gallery.image1 %}{{ gallery.image1.url }}{% else %} {{ gallery.house.primary_img.url }} {% endif %}"/>
+                                                    <img src="{% if gallery.image1 %}{{ gallery.image1.url }}{% else %} {{ house.primary_img.url }} {% endif %}"/>
                                                     <div class="carousel-caption">
                                                         <h3>House First view</h3>
                                                     </div>
@@ -83,7 +80,7 @@
                                                     <img src="
 
 
-                                                            {% if gallery.image2 %}{{ gallery.image2.url }}{% else %} {{ gallery.house.primary_img.url }}  {% endif %}"/>
+                                                            {% if gallery.image2 %}{{ gallery.image2.url }}{% else %} {{ house.primary_img.url }}  {% endif %}"/>
                                                     <div class="carousel-caption">
                                                         <h3>House's Second view</h3>
                                                     </div>
@@ -92,7 +89,7 @@
                                                     <img src="
 
 
-                                                            {% if gallery.image3 %}{{ gallery.image3.url }}{% else %} {{ gallery.house.primary_img.url }} {% endif %}"/>
+                                                            {% if gallery.image3 %}{{ gallery.image3.url }}{% else %} {{ house.primary_img.url }} {% endif %}"/>
                                                     <div class="carousel-caption">
                                                         <h3>House's Third view</h3>
 
@@ -103,7 +100,7 @@
                                                     <img src="
 
 
-                                                            {% if gallery.image4 %}{{ gallery.image4.url }}{% else %}{{ gallery.house.primary_img.url }}{% endif %}"/>
+                                                            {% if gallery.image4 %}{{ gallery.image4.url }}{% else %}{{ house.primary_img.url }}{% endif %}"/>
                                                     <div class="carousel-caption">
                                                         <h3>House's fourth view</h3>
                                                         <p>Located at {{ gallery.board.location }}</p>
@@ -114,7 +111,7 @@
                                                     <img src="
 
 
-                                                            {% if gallery.image5 %}{{ gallery.image5.url }}{% else %}{{ gallery.house.primary_img.url }} {% endif %}"/>
+                                                            {% if gallery.image5 %}{{ gallery.image5.url }}{% else %}{{ house.primary_img.url }} {% endif %}"/>
                                                     <div class="carousel-caption">
                                                         <h3>House's fifth view</h3>
 
