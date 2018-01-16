@@ -202,7 +202,7 @@
                     {% block content %}
                         <div class="card">
                         <div class="body">
-                            <div id="map" style="width: 100%; height: auto;">
+                            <div id="map" style="width: 885px; height: 500px;">
 
                             </div>
                         </div>
@@ -222,7 +222,7 @@
                         function initAutocomplete() {
 
                             var marker = false;
-                            map = new google.maps.Map(document.getElementById('gmap_markers'), {
+                            map = new google.maps.Map(document.getElementById('map'), {
                                 center: {lat: -1.2885962273241198, lng: 36.823039054870605},
                                 zoom: 13,
                                 mapTypeId: 'roadmap'
