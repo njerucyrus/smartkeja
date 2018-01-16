@@ -29,7 +29,10 @@ from django.views.generic import TemplateView, RedirectView, ListView, DetailVie
 from django.views.generic.edit import DeleteView, UpdateView
 from django.urls import reverse
 from smarthouse.models import Agent, House, HouseGallery, Booking, Payment, ContactUs, HouseOwner
-
+from smarthouse.phone_number import CleanPhoneNumber
+from smarthouse.signals import checkout_completed, checkout_failed
+from smarthouse.AfricasTalkingGateway import AfricasTalkingGateway, AfricasTalkingGatewayException
+from django.conf import settings
 
 class CreateAccountView(TemplateView):
     template_name = 'site/signup.html'
@@ -359,7 +362,7 @@ class WebsiteIndexView(ListView):
     context_object_name = 'house_posts'
 
     def get_queryset(self):
-        return self.model.objects.filter(is_published=True, is_available=True)
+        return self.model.objects.filter(is_published=True)
 
 
 class MyHousePostsView(LoginRequiredMixin, ListView):
@@ -460,7 +463,16 @@ class SearchView(ListView):
             )
 
             houses = House.objects.filter(queryset).distinct()
+        elif location == 'any' and not low_price and not high_price:
+            houses = House.objects.all().distinct()
+        elif location == 'any' and high_price and low_price:
 
+            queryset = (
+                Q(sale_price__gte=low_price, sale_price__lte=high_price) |
+                Q(rent_price__gte=low_price, rent_price__lte=high_price)
+            )
+
+            houses = House.objects.filter(queryset).distinct()
         else:
 
             queryset = (
@@ -494,22 +506,40 @@ class Checkout(TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        """This should be done on successful payment
-        doing it here now for demo purposes
-        """
-        user = request.user
+
+        gateway = AfricasTalkingGateway(settings.USERNAME, settings.API_KEY)
         try:
-            house = House.objects.get(id=request.POST.get('id'))
-            booking = Booking.objects.create(
-                house=house,
-                booked_by=user,
-                deposit_amount=request.POST.get('deposit_amount')
-            )
-            booking.save()
-            messages.success(request, "Your booking was placed successfully.")
-            return HttpResponseRedirect('/')
-        except House.DoesNotExist as e:
-            messages.error(request, "Could not find the house requested try again later")
+            metadata = {"checkoutType": "Rent",
+                        "houseId": request.POST.get('house_id'),
+                        "username": request.user.username
+                        }
+            phone_number = CleanPhoneNumber(request.POST.get('phone_number')).validate_phone_number()
+            house = House.objects.get(id=request.POST.get('house_id'))
+
+            transactionId = gateway.initiateMobilePaymentCheckout(settings.PRODUCT_NAME,
+                                                                  phone_number,
+                                                                  settings.CURRENCY_CODE,
+                                                                  request.POST.get('amount'),
+                                                                  metadata
+                                                                  )
+            if transactionId:
+                payment = Payment.objects.create(
+                    txn_id=transactionId,
+                    phone_number=phone_number,
+                    amount=request.POST.get('amount'),
+                    house=house,
+                    status="Pending",
+                    payment_type="Rent"
+                )
+                payment.save()
+                messages.success(request, "Your request submitted check your phone to complete the transaction .")
+                return HttpResponseRedirect('/')
+            else:
+                messages.info(request, "Unable to process your request")
+                return HttpResponseRedirect('/')
+
+        except (House.DoesNotExist, AfricasTalkingGatewayException) as e:
+            messages.error(request, "Error occurred {}".format(e))
             return HttpResponseRedirect('/')
 
 
@@ -546,48 +576,41 @@ class MapView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard/pages/map_view.html'
 
 
-from smarthouse.AfricasTalkingGateway import AfricasTalkingGateway, AfricasTalkingGatewayException
+class MpesaNotificationHandler(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(MpesaNotificationHandler, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+
+        data = json.loads(request.body)
+        if data['status'].lower() == "success" and data['category'] == 'MobileCheckout':
+            #create a booking here.
+            house = get_object_or_404(House, id=data["requestMetadata"]["houseId"])
+            user = get_object_or_404(User, username=data["requestMetadata"]["username"])
+            if data["requestMetadata"]["checkoutType"].lower() == "rent":
+                Booking.objects.get_or_create(
+                    house=house,
+                    booked_by=user,
+                    deposit_amount=float(data['value'][3:])
+                )
+
+                house.is_available = False
+                house.save()
+                checkout_completed.send(
+                    sender=self.__class__,
+                    txn_id=data['transactionId'],
+                    status=data['status']
+                )
+                return HttpResponse("successful")
+        elif data['status'].lower() != "success" and data['category'] == 'MobileCheckout':
+            checkout_failed.send(
+                    sender=self.__class__,
+                    txn_id=data['transactionId'],
+                    status=data['status']
+                )
+            return HttpResponse("Failed")
 
 
-def test_checkout(request):
-    username = "sandbox"
-    apiKey = "a2c848d040ee2afd3d3b86b4ae7f38de63ecd9f9afb1504cf03230511a5c9a53"
-    # Create an instance of our awesome gateway class and pass your credentials
-    gateway = AfricasTalkingGateway(username, apiKey)
-    # *************************************************************************************
-    #  NOTE: If connecting to the sandbox:
-    #
-    #  1. Use "sandbox" as the username
-    #  2. Use the apiKey generated from your sandbox application
-    #     https://account.africastalking.com/apps/sandbox/settings/key
-    #  3. Add the "sandbox" flag to the constructor
-    #
-    #  gateway = AfricasTalkingGateway(username, apiKey, "sandbox");
-    # **************************************************************************************
-    # Specify the name of your Africa's Talking payment product
-    productName = "SmartKeja"
-    # The phone number of the customer checking out
-    phoneNumber = "+254703191981"
-    # The 3-Letter ISO currency code for the checkout amount
-    currencyCode = "KES"
-    # The checkout amount
-    amount = 100.50
-    # Any metadata that you would like to send along with this request
-    # This metadata will be  included when we send back the final payment notification
-    metadata = {"agentId": "654",
-                "productId": "321"}
-    providerChannel = "123456"  # Initiate the checkout. If successful, you will get back a transactionId
-    try:
-        transactionId = gateway.initiateMobilePaymentCheckout(productName,
-                                                              phoneNumber,
-                                                              currencyCode,
-                                                              amount,
 
-                                                              metadata,
-                                                              providerChannel
-                                                              )
 
-        return HttpResponse("The transactionId is " + transactionId)
-
-    except AfricasTalkingGatewayException, e:
-        return HttpResponse("Received error response: %s" % str(e))

@@ -1,14 +1,14 @@
 """
  COPYRIGHT (C) 2014 AFRICASTALKING LTD <www.africastalking.com>                                                   #
- 
- AFRICAStALKING SMS GATEWAY CLASS IS A FREE SOFTWARE IE. CAN BE MODIFIED AND/OR REDISTRIBUTED            
- UNDER THER TERMS OF GNU GENERAL PUBLIC LICENCES AS PUBLISHED BY THE                                       
- FREE SOFTWARE FOUNDATION VERSION 3 OR ANY LATER VERSION 
- 
+
+ AFRICAStALKING SMS GATEWAY CLASS IS A FREE SOFTWARE IE. CAN BE MODIFIED AND/OR REDISTRIBUTED
+ UNDER THER TERMS OF GNU GENERAL PUBLIC LICENCES AS PUBLISHED BY THE
+ FREE SOFTWARE FOUNDATION VERSION 3 OR ANY LATER VERSION
+
  THE CLASS IS DISTRIBUTED ON 'AS IS' BASIS WITHOUT ANY WARRANTY, INCLUDING BUT NOT LIMITED TO
- THE IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+ THE IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
@@ -22,28 +22,20 @@ class AfricasTalkingGatewayException(Exception):
 
 
 class AfricasTalkingGateway:
-    def __init__(self, username_, apiKey_):
+    def __init__(self, username_, apiKey_, environment_='production'):
         self.username = username_
         self.apiKey = apiKey_
-        self.environment = "sandbox" if username_ is "sandbox" else "prod"
+        self.environment = environment_
 
         self.HTTP_RESPONSE_OK = 200
         self.HTTP_RESPONSE_CREATED = 201
 
         # Turn this on if you run into problems. It will print the raw HTTP response from our server
-        self.Debug = True
-
-    def generateAuthToken(self):
-        parameters = {'username': self.username}
-        url = self.getGenerateAuthTokenUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            return json.loads(response)
-        raise AfricasTalkingGatewayException(response)
+        self.Debug = False
 
     # Messaging methods
     def sendMessage(self, to_, message_, from_=None, bulkSMSMode_=1, enqueue_=0, keyword_=None, linkId_=None,
-                    retryDurationInHours_=None, authToken_=None):
+                    retryDurationInHours_=None):
         if len(to_) == 0 or len(message_) == 0:
             raise AfricasTalkingGatewayException("Please provide both to_ and message_ parameters")
 
@@ -67,7 +59,7 @@ class AfricasTalkingGateway:
         if not retryDurationInHours_ is None:
             parameters["retryDurationInHours"] = retryDurationInHours_
 
-        response = self.sendRequest(self.getSmsUrl(), parameters, authToken_)
+        response = self.sendRequest(self.getSmsUrl(), parameters)
 
         if self.responseCode == self.HTTP_RESPONSE_CREATED:
             decoded = json.loads(response)
@@ -90,7 +82,7 @@ class AfricasTalkingGateway:
         raise AfricasTalkingGatewayException(response)
 
     # Subscription methods
-    def createSubscription(self, phoneNumber_, shortCode_, keyword_, checkoutToken_):
+    def createSubscription(self, phoneNumber_, shortCode_, keyword_):
         if len(phoneNumber_) == 0 or len(shortCode_) == 0 or len(keyword_) == 0:
             raise AfricasTalkingGatewayException("Please supply phone number, short code and keyword")
 
@@ -99,8 +91,7 @@ class AfricasTalkingGateway:
             'username': self.username,
             'phoneNumber': phoneNumber_,
             'shortCode': shortCode_,
-            'keyword': keyword_,
-            "checkoutToken": checkoutToken_
+            'keyword': keyword_
         }
 
         response = self.sendRequest(url, parameters)
@@ -140,7 +131,7 @@ class AfricasTalkingGateway:
             decoded = json.loads(result)
             return decoded['responses']
 
-        raise AfricasTalkingGatewayException(result) #edited
+        raise AfricasTalkingGatewayException(response)
 
     # Voice methods
     def call(self, from_, to_):
@@ -202,242 +193,13 @@ class AfricasTalkingGateway:
             raise AfricasTalkingGatewayException(decoded["errorMessage"])
         raise AfricasTalkingGatewayException(response)
 
-    # USSD Push method
-    def sendUssdPush(self, phoneNumber_, menu_, checkoutToken_):
-        parameters = {
-            'username': self.username,
-            'phoneNumber': phoneNumber_,
-            'menu': menu_,
-            'checkoutToken': checkoutToken_
-        }
-
-        url = self.getUssdPushUrl()
-        response = self.sendRequest(url, parameters)
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            decoded = json.loads(response)
-            if decoded['status'] == 'Queued':
-                return decoded['sessionId']
-            raise AfricasTalkingGatewayException(decoded["errorMessage"])
-        raise AfricasTalkingGatewayException(response)
-
-    # Checkout Token Request
-    def createCheckoutToken(self, phoneNumber_):
-        parameters = {
-            'phoneNumber': phoneNumber_
-        }
-
-        url = "%s/checkout/token/create" % (self.getApiHost())
-        response = self.sendRequest(url, parameters)
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            decoded = json.loads(response)
-            if decoded['token'] == 'None':
-                raise AfricasTalkingGatewayException(decoded['token'])
-            return decoded['description']
-        raise AfricasTalkingGatewayException(response)
-
     # Payment Methods
-    def bankPaymentCheckoutCharge(self,
-                                  productName_,
-                                  bankAccount_,
-                                  currencyCode_,
-                                  amount_,
-                                  narration_,
-                                  metadata_=None):
-
-        parameters = {
-            'username': self.username,
-            'productName': productName_,
-            'bankAccount': bankAccount_,
-            'currencyCode': currencyCode_,
-            'amount': amount_,
-            'narration': narration_
-        }
-
-        if metadata_:
-            parameters['metadata'] = metadata_
-
-        url = self.getBankPaymentCheckoutChargeUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            responseObj = json.loads(response)
-            if responseObj['status'] == 'PendingValidation':
-                return responseObj['transactionId']
-            raise AfricasTalkingGatewayException(responseObj['description'])
-        raise AfricasTalkingGatewayException(response)
-
-    def bankPaymentCheckoutValidation(self,
-                                      transactionId_,
-                                      otp_):
-
-        parameters = {
-            'username': self.username,
-            'transactionId': transactionId_,
-            'otp': otp_
-        }
-
-        url = self.getBankPaymentCheckoutValidationUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            responseObj = json.loads(response)
-            if responseObj['status'] == 'Success': return
-            raise AfricasTalkingGatewayException(responseObj['description'])
-        raise AfricasTalkingGatewayException(response)
-
-    def bankPaymentTransfer(self,
-                            productName_,
-                            recipients_):
-
-        parameters = {
-            'username': self.username,
-            'productName': productName_,
-            'recipients': recipients_
-        }
-
-        url = self.getBankPaymentTransferUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            responseObj = json.loads(response)
-            if len(responseObj['entries']):
-                return responseObj['entries']
-            raise AfricasTalkingGatewayException(responseObj['errorMessage'])
-        raise AfricasTalkingGatewayException(response)
-
-    def cardPaymentCheckoutCharge(self,
-                                  productName_,
-                                  paymentCard_,
-                                  currencyCode_,
-                                  amount_,
-                                  narration_,
-                                  metadata_=None):
-        parameters = {
-            'username': self.username,
-            'productName': productName_,
-            'paymentCard': paymentCard_,
-            'currencyCode': currencyCode_,
-            'amount': amount_,
-            'narration': narration_
-        }
-
-        if metadata_:
-            parameters['metadata'] = metadata_
-
-        url = self.getCardPaymentCheckoutChargeUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            responseObj = json.loads(response)
-            if responseObj['status'] == 'PendingValidation':
-                return responseObj['transactionId']
-            raise AfricasTalkingGatewayException(responseObj['description'])
-        raise AfricasTalkingGatewayException(response)
-
-    def cardPaymentCheckoutChargeWithToken(self,
-                                           productName_,
-                                           checkoutToken_,
-                                           currencyCode_,
-                                           amount_,
-                                           narration_,
-                                           metadata_=None):
-        parameters = {
-            'username': self.username,
-            'productName': productName_,
-            'checkoutToken': checkoutToken_,
-            'currencyCode': currencyCode_,
-            'amount': amount_,
-            'narration': narration_
-        }
-
-        if metadata_:
-            parameters['metadata'] = metadata_
-
-        url = self.getCardPaymentCheckoutChargeUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            responseObj = json.loads(response)
-            if responseObj['status'] == 'Success': return
-            raise AfricasTalkingGatewayException(responseObj['description'])
-        raise AfricasTalkingGatewayException(response)
-
-    def cardPaymentCheckoutValidation(self,
-                                      transactionId_,
-                                      otp_):
-
-        parameters = {
-            'username': self.username,
-            'transactionId': transactionId_,
-            'otp': otp_
-        }
-
-        url = self.getCardPaymentCheckoutValidationUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            responseObj = json.loads(response)
-            if responseObj['status'] == 'Success':
-                return responseObj['checkoutToken']
-            raise AfricasTalkingGatewayException(responseObj['description'])
-        raise AfricasTalkingGatewayException(response)
-
-    def paymentStashTopup(self,
-                          productName_,
-                          currencyCode_,
-                          amount_,
-                          metadata_):
-        parameters = {
-            'username': self.username,
-            'productName': productName_,
-            'currencyCode': currencyCode_,
-            'amount': amount_,
-            'metadata': metadata_
-        }
-        url = self.getPaymentStashTopupUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            return json.loads(response)
-        raise AfricasTalkingGatewayException(response)
-
-    def paymentWalletTransfer(self,
-                              productName_,
-                              targetUsername_,
-                              targetProductName_,
-                              currencyCode_,
-                              amount_,
-                              metadata_):
-        parameters = {
-            'username': self.username,
-            'productName': productName_,
-            'targetUsername': targetUsername_,
-            'targetProductName': targetProductName_,
-            'currencyCode': currencyCode_,
-            'amount': amount_,
-            'metadata': metadata_
-        }
-        url = self.getPaymentWalletTransferUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            return json.loads(response)
-        raise AfricasTalkingGatewayException(response)
-
-    def paymentWalletBalanceQuery(self):
-        url = self.getPaymentWalletBalanceQueryUrl()
-        response = self.sendRequest(url + "?username=%s" % self.username)
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            return json.loads(response)
-        raise AfricasTalkingGatewayException(response)
-
-    def paymentTransactionFindQuery(self,
-                                    transactionId_):
-        url = self.getPaymentTransactionFindQueryUrl()
-        response = self.sendRequest(url + "?username=%s&transactionId=%s" % (self.username, transactionId_))
-        if self.responseCode == self.HTTP_RESPONSE_OK:
-            return json.loads(response)
-        raise AfricasTalkingGatewayException(response)
-
     def initiateMobilePaymentCheckout(self,
                                       productName_,
                                       phoneNumber_,
                                       currencyCode_,
                                       amount_,
-                                      metadata_,
-                                      providerChannel_):
+                                      metadata_):
         parameters = {
             'username': self.username,
             'productName': productName_,
@@ -446,10 +208,6 @@ class AfricasTalkingGateway:
             'amount': amount_,
             'metadata': metadata_
         }
-
-        if providerChannel_ is not None:
-            parameters['providerChannel'] = providerChannel_
-
         url = self.getMobilePaymentCheckoutUrl()
         response = self.sendJSONRequest(url, json.dumps(parameters))
         if self.responseCode == self.HTTP_RESPONSE_CREATED:
@@ -504,58 +262,6 @@ class AfricasTalkingGateway:
             return decoded
         raise AfricasTalkingGatewayException(response)
 
-    def mobilePaymentB2BRequest(self,
-                                productName_,
-                                provider_,
-                                transferType_,
-                                currencyCode_,
-                                amount_,
-                                metadata_,
-                                destinationChannel_,
-                                destinationAccount_):
-        parameters = {
-            'username': self.username,
-            'productName': productName_,
-            'provider': provider_,
-            'transferType': transferType_,
-            'currencyCode': currencyCode_,
-            'amount': amount_,
-            'destinationChannel': destinationChannel_,
-        }
-        if metadata_ is not None:
-            parameters['metadata'] = metadata_
-
-        if destinationAccount_ is not None:
-            parameters['destinationAccount'] = destinationAccount_
-
-        url = self.getMobilePaymentB2BUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            return json.loads(response)
-        raise AfricasTalkingGatewayException(response)
-
-    def paymentBankWithdrawalRequest(self,
-                                     productName_,
-                                     bankAccountName_,
-                                     currencyCode_,
-                                     amount_,
-                                     metadata_):
-        parameters = {
-            'username': self.username,
-            'bankAccountName': bankAccountName_,
-            'productName': productName_,
-            'currencyCode': currencyCode_,
-            'amount': amount_
-        }
-        if metadata_ is not None:
-            parameters['metadata'] = metadata_
-
-        url = self.getPaymentBankWithdrawalUrl()
-        response = self.sendJSONRequest(url, json.dumps(parameters))
-        if self.responseCode == self.HTTP_RESPONSE_CREATED:
-            return json.loads(response)
-        raise AfricasTalkingGatewayException(response)
-
     # Userdata method
     def getUserData(self):
         url = "%s?username=%s" % (self.getUserDataUrl(), self.username)
@@ -563,17 +269,13 @@ class AfricasTalkingGateway:
         if self.responseCode == self.HTTP_RESPONSE_OK:
             decoded = json.loads(result)
             return decoded['UserData']
-        raise AfricasTalkingGatewayException(result) #edited
+        raise AfricasTalkingGatewayException(response)
 
     # HTTP access method
-    def sendRequest(self, urlString, data_=None, authToken_=None):
+    def sendRequest(self, urlString, data_=None):
         try:
-            headers = {'Accept': 'application/json'}
-            if authToken_ is None:
-                headers['apikey'] = self.apiKey
-            else:
-                headers['authToken'] = authToken_
-
+            headers = {'Accept': 'application/json',
+                       'apikey': self.apiKey}
             if data_ is not None:
                 data = urllib.urlencode(data_)
                 request = urllib2.Request(urlString, data, headers=headers)
@@ -615,20 +317,17 @@ class AfricasTalkingGateway:
         else:
             return 'https://api.africastalking.com'
 
-    def getPaymentHost(self):
-        if self.environment == 'sandbox':
-            return 'https://payments.sandbox.africastalking.com'
-        else:
-            return 'https://payments.africastalking.com'
-
     def getVoiceHost(self):
         if self.environment == 'sandbox':
             return 'https://voice.sandbox.africastalking.com'
         else:
             return 'https://voice.africastalking.com'
 
-    def getGenerateAuthTokenUrl(self):
-        return self.getApiHost() + "/auth-token/generate"
+    def getPaymentHost(self):
+        if self.environment == 'sandbox':
+            return 'https://payments.sandbox.africastalking.com'
+        else:
+            return 'https://payments.africastalking.com'
 
     def getSmsUrl(self):
         return self.getApiHost() + "/version1/messaging"
@@ -645,9 +344,6 @@ class AfricasTalkingGateway:
     def getAirtimeUrl(self):
         return self.getApiHost() + "/version1/airtime"
 
-    def getUssdPushUrl(self):
-        return self.getApiHost() + "/ussd/push/request"
-
     def getMobilePaymentCheckoutUrl(self):
         return self.getPaymentHost() + "/mobile/checkout/request"
 
@@ -656,33 +352,3 @@ class AfricasTalkingGateway:
 
     def getMobilePaymentB2BUrl(self):
         return self.getPaymentHost() + "/mobile/b2b/request"
-
-    def getPaymentBankWithdrawalUrl(self):
-        return self.getPaymentHost() + "/bank-withdrawal"
-
-    def getBankPaymentCheckoutChargeUrl(self):
-        return self.getPaymentHost() + "/bank/checkout/charge"
-
-    def getBankPaymentCheckoutValidationUrl(self):
-        return self.getPaymentHost() + "/bank/checkout/validate"
-
-    def getBankPaymentTransferUrl(self):
-        return self.getPaymentHost() + "/bank/transfer"
-
-    def getCardPaymentCheckoutChargeUrl(self):
-        return self.getPaymentHost() + "/card/checkout/charge"
-
-    def getCardPaymentCheckoutValidationUrl(self):
-        return self.getPaymentHost() + "/card/checkout/validate"
-
-    def getPaymentStashTopupUrl(self):
-        return self.getPaymentHost() + "/topup/stash"
-
-    def getPaymentWalletTransferUrl(self):
-        return self.getPaymentHost() + "/transfer/wallet"
-
-    def getPaymentWalletBalanceQueryUrl(self):
-        return self.getPaymentHost() + "/query/wallet/balance"
-
-    def getPaymentTransactionFindQueryUrl(self):
-        return self.getPaymentHost() + "/query/transaction/find"

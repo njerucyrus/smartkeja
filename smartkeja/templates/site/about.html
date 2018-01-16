@@ -1,9 +1,13 @@
 {% extends 'site/index.html' %}
-
+{% load staticfiles %}
 {% block content %}
     <div class="container-fluid">
         <div class="row clearfix">
+            <div class="card">
             <div class="body">
+                <div class="media-body">
+                    <img src="{% static 'images/aboutimage.jpeg' %}" width="100%" height="350px">
+                </div>
                 Smart Keja is an online platform that gives access to the users who want to quickly find and get a house
                 to rent or buy.
                 The platform allow the agents and sole house owners to manage and upload houses they want to sell or
@@ -17,6 +21,7 @@
                 just one click and you
                 are done. the rest of money you would have spent you would spent to find a house.
             </div>
+        </div>
         </div>
     </div>
 {% endblock %}

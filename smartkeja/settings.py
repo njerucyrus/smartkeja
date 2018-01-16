@@ -132,6 +132,14 @@ STATICFILES_DIRS = (
     os.path.join(PROJECT_ROOT, 'static_files'),
 )
 
+
+# celery config
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+
+
+
+CURRENCY_CODE = 'KES'
+
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', '')
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL', '')
@@ -141,8 +149,6 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-# celery config
-CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 
 LIVE = True
@@ -162,6 +168,10 @@ if LIVE:
     MEDIA_URL = 'http://%s.s3.amazonaws.com/media_root/' % AWS_STORAGE_BUCKET_NAME
 
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto.S3BotoStorage"
+
+    API_KEY = os.environ['API_KEY']
+    PRODUCT_NAME = os.environ['PRODUCT_NAME']
+    USERNAME = os.environ['USERNAME']
 
 
 

@@ -3,9 +3,12 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 
+
 # Create your models here.
+from smarthouse.signals import checkout_completed, checkout_failed
 
 
 class Agent(models.Model):
@@ -38,7 +41,7 @@ class House(models.Model):
     date_posted = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ('-date_posted', )
+        ordering = ('-is_available', '-date_posted')
 
     def get_absolute_url(self):
         return reverse('smarthouse:house_detail', args=[self.pk])
@@ -83,6 +86,9 @@ class Payment(models.Model):
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICE, default=PAYMENT_TYPE_CHOICE[0][0])
     date_paid = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ('-date_paid', )
+
     def __str__(self):
         return "{} for {}".format(self.payment_type, str(self.house))
 
@@ -94,3 +100,13 @@ class ContactUs(models.Model):
 
     def __str__(self):
         return "Contact message from {}".format(self.email)
+
+
+def complete_txn(sender, **kwargs):
+    payment = get_object_or_404(Payment, txn_id=kwargs['txn_id'])
+    payment.status = kwargs['status']
+    payment.save()
+
+
+checkout_completed.connect(complete_txn)
+checkout_failed.connect(complete_txn)

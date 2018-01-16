@@ -1,4 +1,5 @@
 {% extends 'dashboard/index.html' %}
+{% block title %} Payments for house bookings {% endblock %}
 {% block widgets %}
 
 {% endblock %}
@@ -29,13 +30,13 @@
                 <div class="card">
                     <div class="header">
                         <h2>
-                            Client House Booking
+                            Client House Booking Payments
                         </h2>
                     </div>
 
                     <div class="body">
                         <div class="table-responsive" style="font-size: 12px;">
-                            <table class="table table-bordered table-striped table-hover js-basic-example dataTable">
+                            <table class="table table-bordered table-striped table-hover dataTable js-exportable">
                                 <thead>
                                 <tr>
                                     <th>#</th>

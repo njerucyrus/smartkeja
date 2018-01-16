@@ -40,7 +40,7 @@
                      onmouseout="this.style.background='white';">
                     <div class="header">
                         <h2>
-                            <a href="{{ house.get_absolute_url }}" style="color: #2196F3">
+                            <a href="{% if house.is_available %}{{ house.get_absolute_url }}{% endif %}" style="color: #2196F3">
                                 House Located At <i class="material-icons">room</i> {{ house.location }}
                             </a>
                             <small></small>
@@ -52,6 +52,7 @@
                                     <i class="material-icons">more_vert</i>
                                 </a>
                                 <ul class="dropdown-menu pull-right">
+                                {% if house.is_available %}
                                     <li>
                                         {% if house.on_sale %}
                                             <li>
@@ -67,6 +68,7 @@
                                     </li>
 
                                     </li>
+                                {% endif %}
                                 </ul>
                             </li>
                         </ul>
@@ -100,7 +102,8 @@
                                             }
                                         </style>
                                         <ul style="list-style: none">
-                                            {% if house.on_sale %}
+                                       {% if house.is_available %}
+                                            {% if house.on_sale%}
                                                 <li>
                                                     <a href="{% url 'smarthouse:checkout' pk=house.pk %}"
                                                        class="btn btn-primary">BUY NOW</a>
@@ -111,10 +114,16 @@
                                                        class="btn btn-primary">BOOK NOW</a>
                                                 </li>
                                             {% endif %}
-                                            
+
                                             <li>
                                                 <a href="{{ house.get_absolute_url }}">More Info about this house..</a>
                                             </li>
+
+                                       {% else %}
+                                        <li>
+                                            <button class="btn btn-warning waves-effect">Booked</button>
+                                        </li>
+                                        {% endif %}
 
                                         </ul>
                                     </div>
@@ -154,7 +163,7 @@
                      onmouseout="this.style.background='white';">
                     <div class="header">
                         <h2>
-                            <a href="{{ house.get_absolute_url }}" style="color: #2196F3">
+                            <a href="{% if house.is_available %}{{ house.get_absolute_url }}{% else %} {% endif %}" style="color: #2196F3">
                                 House Located At <i class="material-icons">room</i> {{ house.location }}
                             </a>
                             <small></small>
@@ -166,6 +175,7 @@
                                     <i class="material-icons">more_vert</i>
                                 </a>
                                 <ul class="dropdown-menu pull-right">
+                                {% if house.is_available %}
                                     <li>
                                         {% if house.on_sale %}
                                             <li>
@@ -181,6 +191,7 @@
                                     </li>
 
                                     </li>
+                                {% endif %}
                                 </ul>
                             </li>
                         </ul>
@@ -214,6 +225,7 @@
                                             }
                                         </style>
                                         <ul style="list-style: none">
+                                        {% if house.is_available %}
                                             {% if house.on_sale %}
                                                 <li>
                                                     <a href="{% url 'smarthouse:checkout' pk=house.pk %}"
@@ -225,15 +237,15 @@
                                                        class="btn btn-primary">BOOK NOW</a>
                                                 </li>
                                             {% endif %}
-                                            <li>
-                                                <button type="button" class="btn btn-default waves-effect m-r-20"
-                                                        data-toggle="modal" data-target="#largeModal">VIEW ON MAP
-                                                </button>
 
-                                            </li>
                                             <li>
                                                 <a href="{{ house.get_absolute_url }}">More Info about this house..</a>
                                             </li>
+                                            {% else %}
+                                            <li>
+                                                <button class="btn btn-warning waves-effect">Booked</button>
+                                            </li>
+                                        {% endif %}
 
                                         </ul>
                                     </div>

@@ -4,7 +4,7 @@
 {% block content %}
     <div class="row clearfix">
         <div class="header">
-            <h4>Checkout Here or <a href="{% url 'smarthouse:web_index' %}">Go back</a> </h4>
+            <h4>Checkout Here or <a href="{% url 'smarthouse:web_index' %}">Go back</a></h4>
         </div>
 
         <div class="body">
@@ -38,14 +38,20 @@
                     <div class="row">
                         <div class="col-md-6">
                             <label id="amount" for="amount">Amount</label>
-                            <input type="number" class="form-control" id="amount" name="amount"
+                            <input type="text" class="form-control" id="amount"
                                    value="{% if house.on_sale %} {{ house.sale_price }}{% else %}{{ house.rent_price }}{% endif %}"
                                    disabled>
                             <input type="hidden" name="house_id" value="{{ house.id }}">
                             <label for="phoneNumber">Your Phone Number</label>
-                            <input type="number" class="form-control" name="phoneNumber" id="phoneNumber" placeholder="07XX-XXXX-XXX" required>
+                            <input type="number" class="form-control" name="phone_number" id="phoneNumber"
+                                   placeholder="07XX-XXXX-XXX" required>
                             <br/>
-                            <input type="submit" class="btn btn-primary waves-effect" value="CHECKOUT" style="margin-bottom: 15px!important;">
+                            <input type="hidden" class="form-control" id="amount" name="amount"
+                                   value="{% if house.on_sale %} {{ house.sale_price }}{% else %}{{ house.rent_price }}{% endif %}"
+                            >
+                            {% csrf_token %}
+                            <input type="submit" class="btn btn-primary waves-effect" value="CHECKOUT"
+                                   style="margin-bottom: 15px!important;">
                         </div>
                     </div>
                 </form>

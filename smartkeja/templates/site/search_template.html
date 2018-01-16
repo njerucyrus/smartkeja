@@ -6,6 +6,7 @@
                 <div class="col-md-8">
                     <p>Search by location here</p>
                     <select class="form-control show-tick" data-live-search="true" id="locations" name="location">
+                        <option value="any"> Any other part in kenya</option>
                         {% for house in house_options %}
                                 <option value="{{ house.location }}">{{ house.location }}</option>
                         {% endfor %}
