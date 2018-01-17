@@ -688,7 +688,7 @@ def ussd_test(request):
                     response = "END Unable to process your request"
 
             except AfricasTalkingGatewayException, e:
-                response = "END Internal Error Occurred"
+                response = "END Internal Error Occurred {}".format(str(e))
 
         if len(new_res) == 4 and text != "" and new_res[3] == "2":
             response = "END Thank you for using SmartKeja Services"
