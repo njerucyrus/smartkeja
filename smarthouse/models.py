@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import models
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 
-
+from smarthouse.AfricasTalkingGateway import AfricasTalkingGateway, AfricasTalkingGatewayException
 # Create your models here.
 from smarthouse.signals import checkout_completed, checkout_failed
 
@@ -87,7 +88,7 @@ class Payment(models.Model):
     date_paid = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ('-date_paid', )
+        ordering = ('-date_paid',)
 
     def __str__(self):
         return "{} for {}".format(self.payment_type, str(self.house))
@@ -103,8 +104,18 @@ class ContactUs(models.Model):
 
 
 def complete_txn(sender, **kwargs):
-    payment = get_object_or_404(Payment, txn_id=kwargs['txn_id'])
+    payment, created = get_object_or_404(Payment, txn_id=kwargs['txn_id'])
     payment.status = kwargs['status']
+    if created and kwargs['status'].lower() == 'success':
+        # send sms
+        gateway = AfricasTalkingGateway(settings.USERNAME, settings.API_KEY)
+        try:
+            message = kwargs['message']
+            gateway.sendMessage(kwargs['phone_number'], message)
+
+        except AfricasTalkingGatewayException, e:
+            print "error sending sms %s" % e
+
     payment.save()
 
 

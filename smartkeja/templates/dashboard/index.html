@@ -203,7 +203,7 @@
                         <div class="card">
                         <div class="body">
                             <div id="map" style="width: 885px; height: 500px;">
-
+                                <img src="{% static 'images/aboutimage.jpeg' %}" href="80%" width="100%">
                             </div>
                         </div>
                         </div>
@@ -215,131 +215,7 @@
         </div>
     </section>
     {% include 'js.html' %}
-{##}
-{# <script>#}
-{#                        var map;#}
-{##}
-{#                        function initAutocomplete1() {#}
-{##}
-{#                            var marker = false;#}
-{#                            map = new google.maps.Map(document.getElementById('map'), {#}
-{#                                center: {lat: -1.2885962273241198, lng: 36.823039054870605},#}
-{#                                zoom: 13,#}
-{#                                mapTypeId: 'roadmap'#}
-{#// mapTypeId: 'hybrid'#}
-{#                            });#}
-{##}
-{##}
-{#                            if (navigator.geolocation) {#}
-{#                                navigator.geolocation.getCurrentPosition(function (position) {#}
-{#                                    initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)#}
-{#                                });#}
-{#                            }#}
-{##}
-{#                            map.data.addListener('mouseover', function (event) {#}
-{#                                        document.getElementById('info-box').innerHTML =#}
-{#                                            event.feature.getProperty('message');#}
-{#                                    });#}
-{##}
-{##}
-{#// Create the search box and link it to the UI element.#}
-{#                            var input = document.getElementById('pac-input');#}
-{#                            var searchBox = new google.maps.places.SearchBox(input);#}
-{#                            map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);#}
-{##}
-{#// Bias the SearchBox results towards current map's viewport.#}
-{#                            map.addListener('bounds_changed', function () {#}
-{#                                searchBox.setBounds(map.getBounds());#}
-{#                            });#}
-{##}
-{#                            var markers = [];#}
-{#                            var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';#}
-{#                            var icons = {#}
-{#                                parking: {#}
-{#                                    icon: iconBase + 'parking_lot_maps.png'#}
-{#                                },#}
-{#                                library: {#}
-{#                                    icon: iconBase + 'library_maps.png'#}
-{#                                },#}
-{#                                info: {#}
-{#                                    icon: iconBase + 'info-i_maps.png'#}
-{#                                }#}
-{#                            };#}
-{##}
-{#                            // insert ajax request here to fetch all coords#}
-{##}
-{#                            $.ajax({#}
-{#                                type: 'GET',#}
-{#                                url: '{% url 'smarthouse:map_data_endpoint' %}',#}
-{#                                dataType: 'json',#}
-{#                                contentType: 'application/json',#}
-{#                                traditional: true,#}
-{#                                success: function (dataItems) {#}
-{#                                    console.log(dataItems);#}
-{##}
-{#                                    var features = [];#}
-{#                                    dataItems.forEach(function (dataItem) {#}
-{#                                        var feature = {#}
-{#                                            position: new google.maps.LatLng(dataItem['fields']['lat'], dataItem['fields']['lng']),#}
-{#                                            type: 'info',#}
-{#                                            message: 'House Located at '+dataItem['fields']['location']#}
-{#                                        };#}
-{#                                        features.push(feature);#}
-{#                                        console.log(features)#}
-{##}
-{#                                    });#}
-{##}
-{##}
-{#                                    features.forEach(function (feature) {#}
-{#                                        var marker = new google.maps.Marker({#}
-{#                                            position: feature.position,#}
-                                            {#                                            icon: icons[feature.type].icon,#}
-{#                                            map: map#}
-{#                                        });#}
-{##}
-{#                                        markers.push(marker);#}
-{##}
-{##}
-{#                                    });#}
-{##}
-{##}
-{#                                }#}
-{#                            });#}
-{##}
-{##}
-{#// Listen for the event fired when the user selects a prediction and retrieve#}
-{#// more details for that place.#}
-{#                            searchBox.addListener('places_changed', function () {#}
-{#                                var places = searchBox.getPlaces();#}
-{##}
-{#                                if (places.length === 0) {#}
-{#                                    return;#}
-{#                                }#}
-{##}
-{#// For each place, get the icon, name and location.#}
-{#                                var bounds = new google.maps.LatLngBounds();#}
-{#                                places.forEach(function (place) {#}
-{#                                    if (!place.geometry) {#}
-{#                                        console.log("Returned place contains no geometry");#}
-{#                                        return;#}
-{#                                    }#}
-{##}
-{##}
-{#                                    if (place.geometry.viewport) {#}
-{#// Only geocodes have viewport.#}
-{#                                        bounds.union(place.geometry.viewport);#}
-{#                                    } else {#}
-{#                                        bounds.extend(place.geometry.location);#}
-{#                                    }#}
-{#                                });#}
-{#                                map.fitBounds(bounds);#}
-{#                            });#}
-{##}
-{##}
-{#                        }#}
-{#                    </script>#}
-{#                    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC85mWXDYoa_O8r2NYK3ffyNZR2y2xYPxM&libraries=places&callback=initAutocomplete1"#}
-{#                            async defer></script>#}
+
 </body>
 
 </html>

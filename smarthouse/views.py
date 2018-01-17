@@ -595,13 +595,17 @@ class MpesaNotificationHandler(View):
                     booked_by=data["source"],
                     deposit_amount=float(data['value'][3:])
                 )
-
+                message = "Your have successfully booked {} bedroom house at {} for Ksh {} using Smart Keja.".format(
+                    house.bedrooms, house.location, house.rent_price
+                )
                 house.is_available = False
                 house.save()
                 checkout_completed.send(
                     sender=self.__class__,
                     txn_id=data['transactionId'],
-                    status=data['status']
+                    status=data['status'],
+                    phone_number=data['source'],
+                    message=message
                 )
                 return HttpResponse("successful")
         elif data['status'].lower() != "success" and data['category'] == 'MobileCheckout':
@@ -611,6 +615,15 @@ class MpesaNotificationHandler(View):
                 status=data['status']
             )
             return HttpResponse("Failed")
+
+
+class SingleMapView(TemplateView):
+    template_name = 'site/single_map.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SingleMapView, self).get_context_data(**kwargs)
+        context['house'] = get_object_or_404(House, pk=self.kwargs['pk'])
+        return context
 
 
 @csrf_exempt

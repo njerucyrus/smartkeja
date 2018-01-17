@@ -1,0 +1,52 @@
+{% extends 'site/base.html' %}
+
+{% block content %}
+    <style>
+        img {
+            width: 400px !important;
+            height: 250px !important;
+        }
+    </style>
+    <div class="row clearfix">
+        <div class="container-fluid">
+            <div class="card">
+                <div class="header">
+                    <h2>
+                        MAP View
+                    </h2>
+                </div>
+                <div class="row">
+                    <div class="container-fluid">
+
+                      <div class="body">
+
+                          <div id="map" style="height: 650px; width: auto;">
+
+                          </div>
+                      </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+   <script>
+
+      function initMap() {
+        var myLatLng = {lat: {{ house.lat }}, lng: {{house.lng}}};
+
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 13,
+          center: myLatLng
+        });
+
+        var marker = new google.maps.Marker({
+          position: myLatLng,
+          map: map,
+          title: '{{ house.location}}'
+        });
+      }
+    </script>
+                    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC85mWXDYoa_O8r2NYK3ffyNZR2y2xYPxM&libraries=places&callback=initMap"
+                            async defer></script>
+{% endblock %}
