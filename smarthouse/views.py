@@ -669,7 +669,7 @@ def ussd_test(request):
                 transactionId = gateway.initiateMobilePaymentCheckout(settings.PRODUCT_NAME,
                                                                       phone_number,
                                                                       settings.CURRENCY_CODE,
-                                                                      house.rent_price,
+                                                                      float(house.rent_price),
                                                                       metadata
                                                                       )
                 if transactionId:
