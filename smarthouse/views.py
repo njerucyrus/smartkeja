@@ -662,14 +662,15 @@ def ussd_test(request):
             try:
                 metadata = {"checkoutType": "Rent",
                             "houseId": house.id,
-                            "username": ""
+                            "username": "userid"
                             }
                 phone_number = CleanPhoneNumber(phoneNumber).validate_phone_number()
+                amount = 300
 
                 transactionId = gateway.initiateMobilePaymentCheckout(settings.PRODUCT_NAME,
-                                                                      phone_number,
+                                                                      phoneNumber,
                                                                       settings.CURRENCY_CODE,
-                                                                      str(house.rent_price),
+                                                                      amount,
                                                                       metadata
                                                                       )
                 if transactionId:
