@@ -661,16 +661,15 @@ def ussd_test(request):
             gateway = AfricasTalkingGateway(settings.USERNAME, settings.API_KEY)
             try:
                 metadata = {"checkoutType": "Rent",
-                            "houseId": house.id,
+                            "houseId": str(house.id),
                             "username": "userid"
                             }
                 phone_number = CleanPhoneNumber(phoneNumber).validate_phone_number()
-                amount = 300
 
                 transactionId = gateway.initiateMobilePaymentCheckout(settings.PRODUCT_NAME,
-                                                                      phoneNumber,
+                                                                      phone_number,
                                                                       settings.CURRENCY_CODE,
-                                                                      amount,
+                                                                      house.rent_price,
                                                                       metadata
                                                                       )
                 if transactionId:
@@ -689,7 +688,7 @@ def ussd_test(request):
                     response = "END Unable to process your request"
 
             except AfricasTalkingGatewayException, e:
-                response = "END Internal Error Occurred KSH {}  {}".format(house.rent_price, str(e))
+                response = "END Internal Error Occurred ".format(str(e))
 
         if len(new_res) == 4 and text != "" and new_res[3] == "2":
             response = "END Thank you for using SmartKeja Services"
