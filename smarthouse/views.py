@@ -665,7 +665,6 @@ def ussd_test(request):
                             "username": ""
                             }
                 phone_number = CleanPhoneNumber(phoneNumber).validate_phone_number()
-                house = House.objects.get(id=request.POST.get('house_id'))
 
                 transactionId = gateway.initiateMobilePaymentCheckout(settings.PRODUCT_NAME,
                                                                       phone_number,
