@@ -34,6 +34,7 @@ from smarthouse.signals import checkout_completed, checkout_failed
 from smarthouse.AfricasTalkingGateway import AfricasTalkingGateway, AfricasTalkingGatewayException
 from django.conf import settings
 
+
 class CreateAccountView(TemplateView):
     template_name = 'site/signup.html'
 
@@ -585,13 +586,13 @@ class MpesaNotificationHandler(View):
 
         data = json.loads(request.body)
         if data['status'].lower() == "success" and data['category'] == 'MobileCheckout':
-            #create a booking here.
+            # create a booking here.
             house = get_object_or_404(House, id=data["requestMetadata"]["houseId"])
-            user = get_object_or_404(User, username=data["requestMetadata"]["username"])
+
             if data["requestMetadata"]["checkoutType"].lower() == "rent":
                 Booking.objects.get_or_create(
                     house=house,
-                    booked_by=user,
+                    booked_by=data["source"],
                     deposit_amount=float(data['value'][3:])
                 )
 
@@ -605,12 +606,92 @@ class MpesaNotificationHandler(View):
                 return HttpResponse("successful")
         elif data['status'].lower() != "success" and data['category'] == 'MobileCheckout':
             checkout_failed.send(
-                    sender=self.__class__,
-                    txn_id=data['transactionId'],
-                    status=data['status']
-                )
+                sender=self.__class__,
+                txn_id=data['transactionId'],
+                status=data['status']
+            )
             return HttpResponse("Failed")
 
 
+@csrf_exempt
+def ussd_test(request):
+    if request.method == 'POST':
+        sessionId = request.POST["sessionId"]
+        serviceCode = request.POST["serviceCode"]
+        phoneNumber = request.POST["phoneNumber"]
+        text = request.POST["text"]
+        new_res = text.rsplit("*")
+        response = ''
 
+        if text == "":
+            response = "CON Welcome To Smart Keja \nPlease reply with \n"
+            response += "1. House to rent\n"
+            response += "2. House to buy\n"
+            response += "0. Exit"
+        if text == "1":
+            response = "CON Enter your preferred house location"
+        if text == "2":
+            response = "END Sorry! this service is not available on USSD  \n" \
+                       " Visit smartkeja.herokuapp.com To use this service"
+        if text == "0":
+            response = "END Thank you for using SmartKeja.You can also find us on smartkeja.herokuapp.com " \
+                       "for more exciting services"
 
+        if len(new_res) == 2 and text != "":
+            location = new_res[1]
+            response = "CON Please Reply with \n"
+            houses = House.objects.filter(is_available=True, on_sale=False, location__icontains=location)
+
+            if len(houses) == 0:
+                response = "END No house matches your search try again later"
+
+            for house in houses:
+                response += "{}: {} Bedroom House in {} for KSH {}\n".format(house.id, house.bedrooms, house.location,
+                                                                             house.rent_price)
+        if len(new_res) == 3 and text != "":
+            house = House.objects.get(id=int(new_res[2]))
+            request.session['house_id'] = house.id
+            response += "CON Please Reply with\n"
+            response += "1: Confirm Your booking\n"
+            response += "2: Cancel\n"
+
+        if len(new_res) == 4 and text != "" and new_res[3] == "1":
+            house = House.objects.get(id=new_res[2])
+
+            gateway = AfricasTalkingGateway(settings.USERNAME, settings.API_KEY)
+            try:
+                metadata = {"checkoutType": "Rent",
+                            "houseId": house.id,
+                            "username": ""
+                            }
+                phone_number = CleanPhoneNumber(phoneNumber).validate_phone_number()
+                house = House.objects.get(id=request.POST.get('house_id'))
+
+                transactionId = gateway.initiateMobilePaymentCheckout(settings.PRODUCT_NAME,
+                                                                      phone_number,
+                                                                      settings.CURRENCY_CODE,
+                                                                      house.rent_price,
+                                                                      metadata
+                                                                      )
+                if transactionId:
+                    payment = Payment.objects.create(
+                        txn_id=transactionId,
+                        phone_number=phone_number,
+                        amount=house.rent_price,
+                        house=house,
+                        status="Pending",
+                        payment_type="Rent"
+                    )
+                    payment.save()
+                    response = "END Your request submitted check your phone to complete the transaction"
+
+                else:
+                    response = "END Unable to process your request"
+
+            except AfricasTalkingGatewayException, e:
+                response = "END Internal Error Occurred"
+
+        if len(new_res) == 4 and text != "" and new_res[3] == "2":
+            response = "END Thank you for using SmartKeja Services"
+
+        return HttpResponse(response, content_type='text/plain')

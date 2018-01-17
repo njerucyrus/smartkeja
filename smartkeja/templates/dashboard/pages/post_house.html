@@ -185,7 +185,8 @@
 
                         <div class="form-group form-float">
                             <div class="form-line">
-                                <input type="file" id="id_photo" name="primary_img" class="form-control" accept="image/*"
+                                <input type="file" id="id_photo" name="primary_img" class="form-control"
+                                       accept="image/*"
                                        value="Upload photo" required>
                             </div>
                         </div>
@@ -203,7 +204,7 @@
                 <div class="col-md-8">
                     <input id="pac-input" class="controls" type="text" placeholder="Search your location here"
                            style="margin-top: 10px;">
-                    <div id="map"style="height: 520px; width:auto ;" ></div>
+                    <div id="map" style="height: 520px; width:auto ;"></div>
                 </div>
             </div>
         </div>
@@ -224,20 +225,20 @@
         });
 
         function showPricesDiv(value) {
-            if (value === 'rent'){
+            if (value === 'rent') {
                 document.getElementById('id_rent_price').setAttribute('required', '');
                 document.getElementById('id_sale_price').removeAttribute('required');
                 $('#sale_price').hide();
                 $('#rent_price').show();
             }
-            if (value === 'sale'){
+            if (value === 'sale') {
                 document.getElementById('id_sale_price').setAttribute('required', '');
                 document.getElementById('id_rent_price').removeAttribute('required');
                 $('#sale_price').show();
                 $('#rent_price').hide();
             }
-            if (value !=='rent' && value !== 'sale'){
-                 $('#sale_price').hide();
+            if (value !== 'rent' && value !== 'sale') {
+                $('#sale_price').hide();
                 $('#rent_price').hide();
             }
         }
@@ -255,153 +256,196 @@
         }
     </script>
 
+
+{#    changed file#}
+
     <script>
 
-        var marker = false;
-        var map;
 
-        function initAutocomplete() {
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: {lat: -1.2885962273241198, lng: 36.823039054870605},
-                zoom: 13,
-                mapTypeId: 'roadmap'
-                // mapTypeId: 'hybrid'
-            });
+      var marker=false;
+      var map;
+      function initAutocomplete() {
+         map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: -1.2885962273241198, lng: 36.823039054870605},
+          zoom: 13,
+          mapTypeId: 'roadmap'
+         // mapTypeId: 'hybrid'
+        });
 
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function (position) {
-                    initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
-                });
+
+     if (navigator.geolocation) {
+         navigator.geolocation.getCurrentPosition(function (position) {
+             initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
+         });
+     }
+
+
+        // Create the search box and link it to the UI element.
+        var input = document.getElementById('pac-input');
+        var searchBox = new google.maps.places.SearchBox(input);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+        // Bias the SearchBox results towards current map's viewport.
+        map.addListener('bounds_changed', function() {
+          searchBox.setBounds(map.getBounds());
+        });
+
+        var markers = [];
+        // Listen for the event fired when the user selects a prediction and retrieve
+        // more details for that place.
+        searchBox.addListener('places_changed', function() {
+          var places = searchBox.getPlaces();
+
+          if (places.length === 0) {
+            return;
+          }
+
+          // Clear out the old markers.
+          markers.forEach(function(marker) {
+            marker.setMap(null);
+          });
+          markers = [];
+
+          // For each place, get the icon, name and location.
+          var bounds = new google.maps.LatLngBounds();
+          places.forEach(function(place) {
+            if (!place.geometry) {
+              console.log("Returned place contains no geometry");
+              return;
             }
+            var icon = {
+              url: place.icon,
+              size: new google.maps.Size(71, 71),
+              origin: new google.maps.Point(0, 0),
+              anchor: new google.maps.Point(17, 34),
+              scaledSize: new google.maps.Size(25, 25)
+            };
+
+            // Create a marker for each place.
+            markers.push(new google.maps.Marker({
+              map: map,
+              icon: icon,
+              title: place.name,
+              position: place.geometry.location
+            }));
+
+            if (place.geometry.viewport) {
+              // Only geocodes have viewport.
+              bounds.union(place.geometry.viewport);
+            } else {
+              bounds.extend(place.geometry.location);
+            }
+          });
+          map.fitBounds(bounds);
+        });
+
+        //my custom
+    var geocoder = new google.maps.Geocoder();
+          google.maps.event.addListener(map, 'click', function(event) {
+    geocoder.geocode({
+    'latLng': event.latLng
+  }, function(results, status) {
+    if (status === google.maps.GeocoderStatus.OK) {
+      if (results[0]) {
+        document.getElementById('location').value = results[0].formatted_address;
+        document.getElementById('location_text').textContent = results[0].formatted_address;
+        console.log(results[0].geometry.location.lat());
+        console.log(results[0].geometry.location.lng());
+
+         document.getElementById('lat').value = results[0].geometry.location.lat(); //latitude
+         document.getElementById('lng').value = results[0].geometry.location.lng(); //longitude
+
+      }
+    }
+  });
+});
+          //end of my custom
 
 
-            // Create the search box and link it to the UI element.
-            var input = document.getElementById('pac-input');
-            var searchBox = new google.maps.places.SearchBox(input);
-            map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+        var marker = false;
 
-            // Bias the SearchBox results towards current map's viewport.
-            map.addListener('bounds_changed', function () {
-                searchBox.setBounds(map.getBounds());
+        //Listen for any clicks on the map.
+       google.maps.event.addListener(map, 'click', function(event) {
+        //Get the location that the user clicked.
+        var clickedLocation = event.latLng;
+        //If the marker hasn't been added.
+        if(marker === false){
+            //Create the marker.
+            marker = new google.maps.Marker({
+                position: clickedLocation,
+                map: map,
+                draggable: true //make it draggable
             });
+            //Listen for drag events!
+            google.maps.event.addListener(marker, 'dragend', function(event){
 
-            var markers = [];
-            // Listen for the event fired when the user selects a prediction and retrieve
-            // more details for that place.
-            searchBox.addListener('places_changed', function () {
-                var places = searchBox.getPlaces();
-
-                if (places.length === 0) {
-                    return;
-                }
-
-                // Clear out the old markers.
-                markers.forEach(function (marker) {
-                    marker.setMap(null);
-                });
-                markers = [];
-
-                // For each place, get the icon, name and location.
-                var bounds = new google.maps.LatLngBounds();
-                places.forEach(function (place) {
-                    if (!place.geometry) {
-                        console.log("Returned place contains no geometry");
-                        return;
-                    }
-                    var icon = {
-                        url: place.icon,
-                        size: new google.maps.Size(71, 71),
-                        origin: new google.maps.Point(0, 0),
-                        anchor: new google.maps.Point(17, 34),
-                        scaledSize: new google.maps.Size(25, 25)
-                    };
-
-                    // Create a marker for each place.
-                    markers.push(new google.maps.Marker({
-                        map: map,
-                        icon: icon,
-                        title: place.name,
-                        position: place.geometry.location
-                    }));
-
-                    if (place.geometry.viewport) {
-                        // Only geocodes have viewport.
-                        bounds.union(place.geometry.viewport);
-                    } else {
-                        bounds.extend(place.geometry.location);
-                    }
-                });
-                map.fitBounds(bounds);
+                 var currentLocation = marker.getPosition();
+    //Add lat and lng values to a field that we can save.
+         // document.getElementById('lat').value = currentLocation.lat(); //latitude
+         // document.getElementById('lng').value = currentLocation.lng(); //longitude
             });
-
-            //my custom
-            var geocoder = new google.maps.Geocoder();
-            google.maps.event.addListener(map, 'click', function (event) {
-                geocoder.geocode({
-                    'latLng': event.latLng
-                }, function (results, status) {
-                    if (status === google.maps.GeocoderStatus.OK) {
-                        if (results[0]) {
-                            document.getElementById('location').value = results[0].formatted_address;
-                            document.getElementById('location_text').textContent = results[0].formatted_address;
-                            console.log(results[0].geometry.location.lat());
-                            console.log(results[0].geometry.location.lng());
-
-                            document.getElementById('lat').value = results[0].geometry.location.lat(); //latitude
-                            document.getElementById('lng').value = results[0].geometry.location.lng(); //longitude
-
-                        }
-                    }
-                });
-            });
-            //end of my custom
-
-
-            var marker = false;
-
-            //Listen for any clicks on the map.
-            google.maps.event.addListener(map, 'click', function (event) {
-                //Get the location that the user clicked.
-                var clickedLocation = event.latLng;
-                //If the marker hasn't been added.
-                if (marker === false) {
-                    //Create the marker.
-                    marker = new google.maps.Marker({
-                        position: clickedLocation,
-                        map: map,
-                        draggable: true //make it draggable
-                    });
-                    //Listen for drag events!
-                    google.maps.event.addListener(marker, 'dragend', function (event) {
-
-                        var currentLocation = marker.getPosition();
-                        //Add lat and lng values to a field that we can save.
-                        // document.getElementById('lat').value = currentLocation.lat(); //latitude
-                        // document.getElementById('lng').value = currentLocation.lng(); //longitude
-                    });
-                } else {
-                    //Marker has already been added, so just change its location.
-                    marker.setPosition(clickedLocation);
-                }
-                //Get the marker's location.
-                //markerLocation();
-
-                var currentLocation = marker.getPosition();
-                //Add lat and lng values to a field that we can save.
-                document.getElementById('lat').value = currentLocation.lat(); //latitude
-                document.getElementById('lng').value = currentLocation.lng(); //longitude
-
-                //console.log("lat "+currentLocation.lat());
-                //console.log("lng  "+currentLocation.lng());
-            });
-
-
+        } else{
+            //Marker has already been added, so just change its location.
+            marker.setPosition(clickedLocation);
         }
+        //Get the marker's location.
+        //markerLocation();
+
+         var currentLocation = marker.getPosition();
+        //Add lat and lng values to a field that we can save.
+        document.getElementById('lat').value = currentLocation.lat(); //latitude
+        document.getElementById('lng').value = currentLocation.lng(); //longitude
+
+           //console.log("lat "+currentLocation.lat());
+           //console.log("lng  "+currentLocation.lng());
+    });
+
+
+}
+
 
 
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC85mWXDYoa_O8r2NYK3ffyNZR2y2xYPxM&libraries=places&callback=initAutocomplete"
-            async defer></script>
+         async defer></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 {% endblock %}

@@ -64,7 +64,7 @@ class HouseGallery(models.Model):
 
 class Booking(models.Model):
     house = models.ForeignKey(House)
-    booked_by = models.ForeignKey(User)
+    booked_by = models.CharField(max_length=20, null=True, default='')
     date_booked = models.DateTimeField(auto_now_add=True)
     cleared = models.BooleanField(default=False)
     deposit_amount = models.FloatField()

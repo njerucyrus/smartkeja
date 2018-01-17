@@ -32,7 +32,8 @@ urlpatterns = [
     url(r'^search/$', views.SearchView.as_view(), name='search'),
     url(r'^api/houseslist/$', ussd_api.list_houses, name='houses_list'),
     url(r'^api/search/(?P<location>\w+)$', ussd_api.search_house, name='houses_list_search'),
-    url(r'^mpesacallback/$', views.MpesaNotificationHandler.as_view(), name='callback')
+    url(r'^mpesacallback/$', views.MpesaNotificationHandler.as_view(), name='callback'),
+    url(r'^ussd/$', views.ussd_test, name='ussd'),
 
 
 
